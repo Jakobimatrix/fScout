@@ -1,0 +1,3 @@
+[submodule "src/settings"]
+	path = src/settings
+	url = git@github.com:Jakobimatrix/settings.git
