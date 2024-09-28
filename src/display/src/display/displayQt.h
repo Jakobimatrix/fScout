@@ -56,7 +56,7 @@ class DisplayQt : public QMainWindow, public Display {
   void saveSplitterState();
 
  public slots:
-  void onScaleChanged(int scale);
+  void onScaleChanged(const QString& scaleText);
 
 
  private slots:
@@ -66,7 +66,6 @@ class DisplayQt : public QMainWindow, public Display {
   void open();
   void load();
   void close();
-  void scaleUI(int scaleValue);
 
  private:
   void createActions();

@@ -69,16 +69,20 @@ void DisplayQt::updateInfo(const std::string &root_path,
   finder_widget->updateInfo(root_path, saved, num_files, indexingDate);
 }
 
-void DisplayQt::onScaleChanged(int scale) {
+void DisplayQt::onScaleChanged(const QString& scaleText) {
+    bool ok;
+    int scale = scaleText.left(scaleText.length() - 1).toInt(&ok); // Remove '%' and convert to int
 
-  QFont font = this->font();
-  font.setPointSizeF(font.pointSizeF() * (scale / 100.0));
-  setFont(font);
+    if (ok) {
+        QFont font = this->font();
+        font.setPointSizeF(font.pointSizeF() * (scale / 100.0));
+        setFont(font);
 
-  // Adjust the entire window's scaling
-  resize(this->size() * (scale / 100.0));
-  finder_widget->resize(finder_widget->size() * (scale / 100.0));
-  finder_output_widget->resize(finder_output_widget->size() * (scale / 100.0));
+        // Adjust the entire window's scaling
+        resize(this->size() * (scale / 100.0));
+        finder_widget->resize(finder_widget->size() * (scale / 100.0));
+        finder_output_widget->resize(finder_output_widget->size() * (scale / 100.0));
+    }
 }
 
 void DisplayQt::close() { QMainWindow::close(); }
@@ -267,7 +271,7 @@ void DisplayQt::about() {
 
 
 void DisplayQt::createActions() {
-  const std::string path = Globals::getInstance().getAbsPath2Resources();
+  const std::string path = Globals::getInstance().getAbsPath2Resources().string();
 
   // open
   openAct = new QAction(QIcon((path + "open.png").c_str()), tr("&Open Folder..."), this);

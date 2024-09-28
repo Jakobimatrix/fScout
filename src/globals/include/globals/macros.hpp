@@ -70,6 +70,8 @@ inline BENCHMARK_ALWAYS_INLINE void DoNotOptimize(Tp& value) {
            "This is a debug assert. See error message above!");                                                  \
   }
 
+#undef ERROR // windof has this macro defined TODO instead rename my macro?
+
 #ifdef NDEBUG
 
 #define DEBUG(str)

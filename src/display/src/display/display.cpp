@@ -15,7 +15,7 @@ Display::~Display() {
     util::Settings::save();
   } catch (...) {
     F_ERROR("Failed to write into Display Settings: %s",
-            Globals::getInstance().getPath2DisplaySettings().c_str());
+            Globals::getInstance().getPath2DisplaySettings().string().c_str());
   }
 }
 
@@ -80,7 +80,7 @@ void Display::loadOldIndex() {
     resetDisplayElements();
     setStatus("Indexing loaded.");
     updateInfo(
-        finder.getRootFolder(), !need_save, finder.getNumEntries(), finder.getIndexingDate());
+        finder.getRootFolder().string(), !need_save, finder.getNumEntries(), finder.getIndexingDate());
     return;
   }
   popup_error("Failed to load indexing.");
@@ -113,7 +113,7 @@ void Display::callbackIndexing(bool success, const std::string& msg) {
     } else {
       setStatus("Indexing finnished: " + msg);
       updateInfo(
-          finder.getRootFolder(), !need_save, finder.getNumEntries(), finder.getIndexingDate());
+          finder.getRootFolder().string(), !need_save, finder.getNumEntries(), finder.getIndexingDate());
     }
   } else {
     popup_error("Indexing stopped: " + msg);

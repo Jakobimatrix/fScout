@@ -33,20 +33,20 @@ class Globals {
     fs::path abs_path_to_base = fs::path("");
     for (; path_it != current_path.end(); path_it++) {
       abs_path_to_base.append(path_it->c_str());
-      if (strcmp(path_it->c_str(), REPRO_FOLDER_NAME.c_str()) == 0) {
+      if (*path_it == REPRO_FOLDER_NAME) {
         break;
       }
     }
 
-    absolute_path_to_base = abs_path_to_base.c_str() + PATH_SEPERATOR;
-    absolute_path_to_executable = current_path.c_str() + PATH_SEPERATOR;
-    absolute_path_to_resources = absolute_path_to_base + RESOURCES_FOLDER_NAME + PATH_SEPERATOR;
-    absolute_path_to_save_files = absolute_path_to_base + SAVE_FOLDER_NAME + PATH_SEPERATOR;
-    absolute_path_to_settings = absolute_path_to_base + SETTINGS_FOLDER_NAME + PATH_SEPERATOR;
+    absolute_path_to_base = abs_path_to_base;
+    absolute_path_to_executable = current_path;
+    absolute_path_to_resources = absolute_path_to_base / RESOURCES_FOLDER_NAME;
+    absolute_path_to_save_files = absolute_path_to_base / SAVE_FOLDER_NAME;
+    absolute_path_to_settings = absolute_path_to_base / SETTINGS_FOLDER_NAME;
 
     if (!fs::exists(absolute_path_to_resources)) {
-      std::runtime_error("The expected Path " + absolute_path_to_resources +
-                         " to " + RESOURCES_FOLDER_NAME + " does not exist.");
+      std::runtime_error("The expected Path " + absolute_path_to_resources.string() +
+                         " to " + RESOURCES_FOLDER_NAME.string() + " does not exist.");
     }
     // if the above exists, the general path is correct!
     // just create the folders if the below path do not exist.
@@ -60,11 +60,11 @@ class Globals {
   }
 
  public:
-  std::string getPath2DisplaySettings() const {
-    return absolute_path_to_settings + FILE_NAME_SETTINGS;
+  std::filesystem::path getPath2DisplaySettings() const {
+    return absolute_path_to_settings / FILE_NAME_SETTINGS;
   }
 
-  const std::string& getAbsPath2Resources() const {
+  const std::filesystem::path& getAbsPath2Resources() const {
     return absolute_path_to_resources;
   }
 
@@ -89,29 +89,20 @@ class Globals {
 
  private:
   // Absolute paths to folders
-  std::string absolute_path_to_base;
-  std::string absolute_path_to_resources;
-  std::string absolute_path_to_executable;
-  std::string absolute_path_to_save_files;
-  std::string absolute_path_to_settings;
-
-
+  std::filesystem::path absolute_path_to_base;
+  std::filesystem::path absolute_path_to_resources;
+  std::filesystem::path absolute_path_to_executable;
+  std::filesystem::path absolute_path_to_save_files;
+  std::filesystem::path absolute_path_to_settings;
 
   // Folder names
-  const std::string REPRO_FOLDER_NAME = std::string("finder");
-  const std::string RESOURCES_FOLDER_NAME = std::string("resources");
-  const std::string SAVE_FOLDER_NAME = std::string("saved_data");
-  const std::string SETTINGS_FOLDER_NAME = std::string("settings");
+  const std::filesystem::path REPRO_FOLDER_NAME = "finder";
+  const std::filesystem::path RESOURCES_FOLDER_NAME = "resources";
+  const std::filesystem::path SAVE_FOLDER_NAME = "saved_data";
+  const std::filesystem::path SETTINGS_FOLDER_NAME = "settings";
 
   // File names
-  const std::string FILE_NAME_SETTINGS = std::string("settings.txt");
-
-  const std::string PATH_SEPERATOR =
-#ifdef _WIN32
-      std::string("\\");
-#else
-      std::string("/");
-#endif
+  const std::filesystem::path FILE_NAME_SETTINGS = "window.txt";
 
   // Strings
   const std::string MAIN_WINDOW_NAME = std::string("Finder");

@@ -70,7 +70,7 @@ void FinderOutputWidget::setSearchResults(const std::vector<std::filesystem::pat
 
   resultList->clear();
   for (const auto &searchResult : searchResults) {
-    QListWidgetItem *item = new QListWidgetItem(QString(searchResult.c_str()));
+    QListWidgetItem *item = new QListWidgetItem(QString(searchResult.string().c_str()));
     resultList->addItem(item);
   }
 

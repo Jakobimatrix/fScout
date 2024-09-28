@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <array>
 
 namespace pattern {
 #ifdef _WIN32

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 # Set the project name
-project(finder VERSION 1.0.0)
+project(fScout VERSION 1.0.0)
 
 # Include custom CMake modules
 include(cmake/StandardProjectSettings.cmake)
@@ -10,7 +10,15 @@ include(cmake/PreventInSourceBuilds.cmake)
 # Set C++ standard and compile-time options
 add_library(project_options INTERFACE)
 target_compile_features(project_options INTERFACE cxx_std_20)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -pthread")
+if(UNIX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -pthread")
+elseif(WIN32)
+  if(MSVC)
+    message(FATAL_ERROR "MSVC not supported")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -mthreads")
+  endif()
+endif()
 
 # Time trace options for Clang (Linux builds)
 if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
@@ -49,16 +57,18 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-# Find and link Qt5 libraries
+# Try to find Qt6 first
 find_package(Qt5 COMPONENTS Widgets Core Gui REQUIRED)
-find_package(Qt5OpenGL REQUIRED)
 
 # Set required C++ standard (in this case, C++20)
 set(CMAKE_CXX_STANDARD 20)
 
-# Find the Qt5 libraries (path to MinGW compiled Qt libs should be set here for cross-compiling)
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-  set(CMAKE_PREFIX_PATH "/usr/x86_64-w64-mingw32/lib/cmake/Qt5")  # Update this to your correct MinGW Qt path
+if(WIN32)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(CMAKE_PREFIX_PATH "C:/Qt/Tools/mingw1310_64" CACHE PATH "Qt5 MinGW Path")
+  else()
+  message(FATAL_ERROR "Compiler not supported")
+  endif()
 endif()
 
 # Add submodules for project organization
