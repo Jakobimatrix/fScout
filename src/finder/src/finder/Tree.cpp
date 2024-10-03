@@ -39,7 +39,7 @@ void Tree::traverse(const TreeNode *rootSubT,
 
 void Tree::findPrefixMatchesHelper(const TreeNode *nodePtr,
                                    const std::string &prefix,
-                                   std::string currentPrefix,
+                                   const std::string &currentPrefix,
                                    std::vector<std::filesystem::path> &result,
                                    bool caseInsensitive) const {
   if (prefix.empty()) {

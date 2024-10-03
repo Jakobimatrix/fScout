@@ -24,7 +24,7 @@ class Tree {
 
   void findPrefixMatchesHelper(const TreeNode *nodePtr,
                                const std::string &prefix,
-                               std::string currentPrefix,
+                               const std::string &currentPrefix,
                                std::vector<std::filesystem::path> &result,
                                bool caseInsensitive) const;
   std::vector<std::filesystem::path> findPrefixMatches(const std::string &,

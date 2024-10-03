@@ -32,21 +32,26 @@ function(set_project_warnings project_name)
   )
 
   set(CLANG_WARNINGS
-      -Wall
-      -Wextra # reasonable and standard
-      -Wshadow # warn the user if a variable declaration shadows one from a parent context
-      -Wnon-virtual-dtor # warn the user if a class with virtual functions has a non-virtual destructor. This helps
-                         # catch hard to track down memory errors
-      -Wold-style-cast # warn for c-style casts
-      -Wcast-align # warn for potential performance problem casts
-      -Wunused # warn on anything being unused
-      -Woverloaded-virtual # warn if you overload (not override) a virtual function
-      -Wpedantic # warn if non-standard C++ is used
-      -Wconversion # warn on type conversions that may lose data
-      -Wsign-conversion # warn on sign conversions
-      -Wnull-dereference # warn if a null dereference is detected
-      -Wdouble-promotion # warn if float is implicit promoted to double
-      -Wformat=2 # warn on security issues around functions that format output (ie printf)
+      -march=native -mfpmath=sse # for internal optimizations by Eigen.
+      -mms-bitfields          # https://stackoverflow.com/questions/52442141/if-gcc-build-option-with-mms-bitfields-the-epoll-event-data-u64-value-can
+      -fno-strict-aliasing    # https://stackoverflow.com/questions/52442141/if-gcc-build-option-with-mms-bitfields-the-epoll-event-data-u64-value-can
+
+      -Werror      # We treat every warning as an error.
+      -Weverything # Warn us about everything
+
+      # disable useless warnings
+      -Wno-c++98-compat               # no c++98 support
+      -Wno-c++98-compat-pedantic      # no c++98 support
+      -Wno-return-std-move-in-c++11   # no c++11 support
+      -Wno-c++17-extensions           # no support below c++17
+      -Wno-c++20-compat               # no support above c++20
+      -Wno-pragmas                    # silence clang warnings that are not gcc warnings
+      -Wno-unknown-warning-option     # silence gcc warnings that are not clang warnings
+      -Wno-unused-macros              # some might be for debugging
+
+      -Wno-missing-prototypes # C++ always requires prototypes
+
+      -Wno-shadow-field-in-constructor # we dont start with m_variables!
   )
 
   if(WARNINGS_AS_ERRORS)

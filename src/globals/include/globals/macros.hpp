@@ -70,7 +70,7 @@ inline BENCHMARK_ALWAYS_INLINE void DoNotOptimize(Tp& value) {
            "This is a debug assert. See error message above!");                                                  \
   }
 
-#undef ERROR // windof has this macro defined TODO instead rename my macro?
+#undef ERROR  // windof has this macro defined TODO instead rename my macro?
 
 #ifdef NDEBUG
 
@@ -94,4 +94,23 @@ inline BENCHMARK_ALWAYS_INLINE void DoNotOptimize(Tp& value) {
 #define ASSERT(expr, str) DEF_ASSERT(expr, str)
 #define F_ASSERT(expr, fmt, ...) DEF_F_ASSERT(expr, fmt, __VA_ARGS__)
 
+#endif
+
+// Compiler-specific macros for suppressing/enabling warnings
+
+#if defined(__clang__)  // Clang compiler
+#define DO_PRAGMA(X) _Pragma(#X)
+#define SUPPRESS_WARNING(warning)  \
+  DO_PRAGMA(clang diagnostic push) \
+  DO_PRAGMA(clang diagnostic ignored warning)
+#define ENABLE_WARNING() DO_PRAGMA(clang diagnostic pop)
+#elif defined(__GNUC__)  // GCC compiler
+#define DO_PRAGMA(X) _Pragma(#X)
+#define SUPPRESS_WARNING(warning) \
+  DO_PRAGMA(GCC diagnostic push)  \
+  DO_PRAGMA(GCC diagnostic ignored warning)
+#define ENABLE_WARNING() DO_PRAGMA(GCC diagnostic pop)
+#else
+#define SUPPRESS_WARNING(warning)  // Fallback if the compiler is unsupported
+#define ENABLE_WARNING()
 #endif

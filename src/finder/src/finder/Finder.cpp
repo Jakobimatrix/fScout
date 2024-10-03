@@ -105,7 +105,8 @@ bool Finder::loadIndexFromFile(const std::filesystem::path& filePath) {
   }
 }
 
-void Finder::search(const std::string needle, const CallbackSearchResult& callback) {
+void Finder::search(const std::string needle /*intentional copy*/,
+                    const CallbackSearchResult& callback) {
   stopCurrentWorker();
   workerThread = std::make_unique<std::thread>([this, callback, needle]() {
     std::vector<std::filesystem::path> results = dictionary->advancedSearch(
