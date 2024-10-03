@@ -1,4 +1,5 @@
 add_library(display_lib STATIC
+  src/display/HoverableListWidget.cpp
   src/display/finderWidget.cpp
   src/display/finderOutputWidget.cpp
   src/display/display.cpp

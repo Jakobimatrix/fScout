@@ -43,13 +43,10 @@ class DisplayQt : public QMainWindow, public Display {
   void resetDisplayElements() override;
 
   void updateInfo(const std::string &root_path,
-                  const bool saved,
                   const size_t num_files,
                   const std::string &indexingDate) override;
 
   std::filesystem::path openDirChooserDialog() override;
-  std::filesystem::path filePickerDialog(const std::string &filePostfix) override;
-  std::filesystem::path fileSaveDialog(const std::string &filePostfix) override;
 
   void loadSplitterState();
 
@@ -60,11 +57,8 @@ class DisplayQt : public QMainWindow, public Display {
 
 
  private slots:
-  bool save();
-  void run();
   void about();
   void open();
-  void load();
   void close();
 
  private:
@@ -79,7 +73,6 @@ class DisplayQt : public QMainWindow, public Display {
 
   // QT stuff
   static constexpr int BASE_ICON_SIZE = 32;
-  std::map<QAction *, QString> actionIcons;
 
   QMenu *fileMenu;
   QMenu *editMenu;

@@ -33,7 +33,6 @@ QGroupBox *FinderWidget::create_info() {
   QFormLayout *formLayout = new QFormLayout;
 
   formLayout->addRow(new QLabel("Root Path:"), rootPathLabel);
-  formLayout->addRow(new QLabel("Saved:"), savedLabel);
   formLayout->addRow(new QLabel("Files Found:"), filesFoundLabel);
   formLayout->addRow(new QLabel("Indexing Date:"), indexingDate);
 
@@ -146,10 +145,9 @@ QGroupBox *FinderWidget::create_controlls() {
   return controlsGroup;
 }
 
-void FinderWidget::reset() { updateInfo("-", false, 0, "-"); }
+void FinderWidget::reset() { updateInfo("-", 0, "-"); }
 
 void FinderWidget::updateInfo(const std::string &root_path,
-                              const bool saved,
                               const size_t num_files,
                               const std::string &indexing_date) {
   // Ensure this runs in the main thread
@@ -160,8 +158,8 @@ void FinderWidget::updateInfo(const std::string &root_path,
 
     QMetaObject::invokeMethod(
         this,
-        [this, root_path_copy, saved, num_files, indexing_date_copy]() {
-          updateInfo(root_path_copy, saved, num_files, indexing_date_copy);
+        [this, root_path_copy, num_files, indexing_date_copy]() {
+          updateInfo(root_path_copy, num_files, indexing_date_copy);
         },
         Qt::QueuedConnection);
     return;
@@ -169,7 +167,6 @@ void FinderWidget::updateInfo(const std::string &root_path,
 
   // Update UI labels in the main thread
   rootPathLabel->setText(QString("Root Path: %1").arg(QString::fromStdString(root_path)));
-  savedLabel->setText(QString("Indexing Saved: %1").arg(saved ? "true" : "false"));
   filesFoundLabel->setText(
       QString("Files Found: %1").arg(QString::fromStdString(std::to_string(num_files))));
   indexingDate->setText(indexing_date.c_str());

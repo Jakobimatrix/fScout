@@ -50,10 +50,9 @@ void DisplayQt::resetDisplayElements() {
 }
 
 void DisplayQt::updateInfo(const std::string &root_path,
-                           const bool saved,
                            const size_t num_files,
                            const std::string &indexingDate) {
-  finder_widget->updateInfo(root_path, saved, num_files, indexingDate);
+  finder_widget->updateInfo(root_path, num_files, indexingDate);
 }
 
 void DisplayQt::onScaleChanged(const QString &scaleText) {
@@ -71,31 +70,21 @@ void DisplayQt::changeScale(const int scale, const bool is_scale_on_load) {
   const double old_inverse_fraction = 100. / static_cast<double>(getDisplayScale());
   const double scale_fraction = new_fraction * old_inverse_fraction;
 
+  const double fontScale = is_scale_on_load ? new_fraction : scale_fraction;
+
   QFont font = this->font();
-  font.setPointSizeF(font.pointSizeF() * (is_scale_on_load ? new_fraction : scale_fraction));
+  font.setPointSizeF(font.pointSizeF() * fontScale);
   setFont(font);
+  // Scale the tooltip font size as well
+  QFont tooltipFont = QToolTip::font();
+  tooltipFont.setPointSizeF(tooltipFont.pointSizeF() * fontScale);
+  QToolTip::setFont(tooltipFont);
 
   if (!is_scale_on_load) {  // on load resizes the windows already,  dont scale again.
     resize(this->size() * scale_fraction);
     finder_widget->resize(finder_widget->size() * scale_fraction);
     finder_output_widget->resize(finder_output_widget->size() * scale_fraction);
   }
-
-  // icons (not working :(
-  /*
-  const int scaledSize =
-      static_cast<int>(static_cast<double>(BASE_ICON_SIZE) * new_fraction);
-  for (auto it = actionIcons.begin(); it != actionIcons.end(); ++it) {
-    QAction *action = it->first;
-    QString iconPath = it->second;
-
-    // Load the original icon and scale it
-    QPixmap pixmap(iconPath);
-    QIcon scaledIcon(pixmap.scaled(scaledSize, scaledSize, Qt::KeepAspectRatio));
-
-    action->setIcon(scaledIcon);
-  }
-  */
 }
 
 const QStringList DisplayQt::getAvailableZoomLevels() {
@@ -156,32 +145,6 @@ void DisplayQt::setWindowFilePath(const std::string &file_path) {
   QMainWindow::setWindowFilePath(path);
 }
 
-
-std::filesystem::path DisplayQt::filePickerDialog(const std::string &filePostfix) {
-  QString filter = QString("Files (*%1)").arg(QString::fromStdString(filePostfix));
-
-  // Show the file dialog with the dynamically generated filter
-  QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), "", filter);
-
-  if (file_name.isEmpty()) {
-    return std::filesystem::path();
-  }
-
-  return std::filesystem::path(file_name.toStdString());
-}
-
-std::filesystem::path DisplayQt::fileSaveDialog(const std::string &filePostfix) {
-  QString filter = QString("Files (*%1)").arg(QString::fromStdString(filePostfix));
-
-  QString file_name = QFileDialog::getSaveFileName(this, tr("Save File"), "", filter);
-  if (file_name.isEmpty()) {
-    return std::filesystem::path();
-  }
-  if (!file_name.endsWith(filePostfix.c_str())) {
-    return std::filesystem::path(file_name.toStdString() + filePostfix);
-  }
-  return std::filesystem::path(file_name.toStdString());
-}
 
 std::filesystem::path DisplayQt::openDirChooserDialog() {
 
@@ -278,15 +241,6 @@ void DisplayQt::setStatus(const QString &msg, int timeout) {
   setStatus(msg.toStdString(), timeout);
 }
 
-
-bool DisplayQt::save() { return Display::save(); }
-
-
-void DisplayQt::open() { Display::open(); }
-void DisplayQt::load() { Display::loadOldIndex(); }
-
-void DisplayQt::run() { WARNING("run does nothing"); }
-
 void DisplayQt::about() {
 
   const std::string info_text =
@@ -294,6 +248,7 @@ void DisplayQt::about() {
   QMessageBox::about(this, tr("About Finder"), tr(info_text.c_str()));
 }
 
+void DisplayQt::open() { Display::open(); }
 
 void DisplayQt::createActions() {
   const auto &path = Globals::getInstance().getAbsPath2Resources();
@@ -320,23 +275,7 @@ void DisplayQt::createActions() {
                          tr("Open the base of your search."),
                          QKeySequence::Find,
                          &DisplayQt::open);
-  actionIcons[openAct] = openPath.c_str();
 
-  const auto loadPath = (path / "load.png").string();
-  loadAct = createAction(loadPath.c_str(),
-                         tr("&Load Index File..."),
-                         tr("Open an old indexed search."),
-                         QKeySequence::Open,
-                         &DisplayQt::load);
-  actionIcons[loadAct] = loadPath.c_str();
-
-  const auto savePath = (path / "save.png").string();
-  saveAct = createAction(savePath.c_str(),
-                         tr("&Save Current Index"),
-                         tr("Save the current search tree."),
-                         QKeySequence::Save,
-                         &DisplayQt::save);
-  actionIcons[saveAct] = savePath.c_str();
 
   const auto exitPathPathPathPath = (path / "exit.png").string();
   exitAct = createAction(exitPathPathPathPath.c_str(),
@@ -344,7 +283,6 @@ void DisplayQt::createActions() {
                          tr("Close the program."),
                          QKeySequence::Close,
                          &DisplayQt::close);
-  actionIcons[exitAct] = exitPathPathPathPath.c_str();
 
   aboutAct = new QAction(tr("About &Finder"), this);
   aboutAct->setStatusTip(tr("Show the Finders's About box."));
@@ -354,8 +292,8 @@ void DisplayQt::createActions() {
 void DisplayQt::createMenus() {
   fileMenu = menuBar()->addMenu(tr("&File"));
   fileMenu->addAction(openAct);
-  fileMenu->addAction(loadAct);
-  fileMenu->addAction(saveAct);
+  // fileMenu->addAction(loadAct);
+  // fileMenu->addAction(saveAct);
   fileMenu->addSeparator();
   fileMenu->addAction(exitAct);
 
@@ -368,8 +306,8 @@ void DisplayQt::createMenus() {
 void DisplayQt::createToolBars() {
   fileToolBar = addToolBar(tr("File"));
   fileToolBar->addAction(openAct);
-  fileToolBar->addAction(loadAct);
-  fileToolBar->addAction(saveAct);
+  // fileToolBar->addAction(loadAct);
+  // fileToolBar->addAction(saveAct);
   fileToolBar->setIconSize(QSize(BASE_ICON_SIZE, BASE_ICON_SIZE));
 
   editToolBar = addToolBar(tr("Edit"));

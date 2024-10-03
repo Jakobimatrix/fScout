@@ -29,6 +29,7 @@ class Finder {
         dictionary(std::make_unique<Dictionary>()) {}
   bool isInitiated() const;
   bool isWorking() const;
+  void stopCurrentWorker();
   size_t getNumEntries() const;
   std::filesystem::path getRootFolder() const;
 
@@ -71,7 +72,6 @@ class Finder {
 
  private:
   void startIndexing(const CallbackFinnished &);
-  void stopCurrentWorker();
   std::vector<std::unique_ptr<SearchPattern>> getActiveSearchPatterns() const;
 
   bool useExactMatchPattern = true;

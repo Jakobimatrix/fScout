@@ -97,17 +97,17 @@ class Globals {
   std::filesystem::path absolute_path_to_settings;
 
   // Folder names
-  const std::filesystem::path REPRO_FOLDER_NAME = "finder";
+  const std::filesystem::path REPRO_FOLDER_NAME = "fScout";
   const std::filesystem::path RESOURCES_FOLDER_NAME = "resources";
   const std::filesystem::path SAVE_FOLDER_NAME = "saved_data";
   const std::filesystem::path SETTINGS_FOLDER_NAME = "settings";
 
   // File names
-  const std::filesystem::path FILE_NAME_SETTINGS = "window.txt";
+  const std::filesystem::path FILE_NAME_SETTINGS = "user_settings.txt";
 
   // Strings
-  const std::string MAIN_WINDOW_NAME = std::string("Finder");
+  const std::string MAIN_WINDOW_NAME = std::string("fScout");
   const std::string VERSION_NAME = std::string("Abyssinian");
-  const std::string BINARY_FORMAT_IDENTIFIER = std::string("8008135-Finder");
+  const std::string BINARY_FORMAT_IDENTIFIER = std::string("8008135-fScout");
   const std::string BINARY_FILE_POSTFIX = std::string(".index");
 };

@@ -67,23 +67,9 @@ class Display : public util::Settings {
 
  protected:
   // user interaktions
-  [[nodiscard]] bool save();
   void open();
+  void save();
   void loadOldIndex();
-
-  /*!
-   * \brief Implement a popup file Picker Dialog.
-   * \param postfix The postfix of the file.
-   * \return Returns the users choosen file and path.
-   */
-  virtual std::filesystem::path filePickerDialog(const std::string& postfix) = 0;
-
-  /*!
-   * \brief Implement a popup file Save Dialog.
-   * \param postfix The postfix of the file.
-   * \return Returns the users choosen file name and path.
-   */
-  virtual std::filesystem::path fileSaveDialog(const std::string& postfix) = 0;
 
   /*!
    * \brief Open a Dialog that lets the user choose 1 Folder.
@@ -158,16 +144,12 @@ class Display : public util::Settings {
   /*!
    * \brief Update the displayed Info
    * \param root_path A string displaying the root of the search
-   * \param saved If the user saved the indexing
    * \param num_files The number of files in the index
    * \param indexing_date The date of the indexing
    */
   virtual void updateInfo(const std::string& root_path,
-                          const bool saved,
                           const size_t num_files,
                           const std::string& indexingDate) = 0;
-
-  bool hasUnsavedChanges() const { return need_save; }
 
   [[nodiscard]] bool exitGracefully();
 
@@ -207,14 +189,11 @@ class Display : public util::Settings {
   int getDisplayScale() const { return disp_scale; }
 
  private:
-  bool ask4Save();
-
   void callbackIndexing(bool success, const std::string& msg);
   void callbackSearch(bool finnished, const std::vector<std::filesystem::path>& results);
 
 
   // calculation
-  bool need_save = false;
   Finder finder;
 
   std::string last_search;

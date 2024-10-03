@@ -20,7 +20,6 @@ class FinderWidget : public QWidget {
   void reset();
 
   void updateInfo(const std::string &root_path,
-                  const bool saved,
                   const size_t num_files,
                   const std::string &indexing_date);
 
@@ -34,7 +33,6 @@ class FinderWidget : public QWidget {
   QGroupBox *create_controlls();
   QGroupBox *create_info();
   QLabel *rootPathLabel = new QLabel();
-  QLabel *savedLabel = new QLabel();
   QLabel *filesFoundLabel = new QLabel();
   QLabel *indexingDate = new QLabel();
 };

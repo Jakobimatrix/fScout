@@ -1,5 +1,7 @@
 #pragma once
 
+#include <display/HoverableListWidget.h>
+
 #include <QGroupBox>
 #include <QLineEdit>
 #include <QListWidget>
@@ -30,6 +32,6 @@ class FinderOutputWidget : public QWidget {
  private:
   QGroupBox *create_search();
   QGroupBox *create_resultField();
-  QListWidget *resultList;
+  HoverableListWidget *resultList;
   DisplayQt *displayQt;
 };
