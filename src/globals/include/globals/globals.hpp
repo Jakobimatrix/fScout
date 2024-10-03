@@ -45,8 +45,9 @@ class Globals {
     absolute_path_to_settings = absolute_path_to_base / SETTINGS_FOLDER_NAME;
 
     if (!fs::exists(absolute_path_to_resources)) {
-      std::runtime_error("The expected Path " + absolute_path_to_resources.string() +
-                         " to " + RESOURCES_FOLDER_NAME.string() + " does not exist.");
+      std::runtime_error("The expected Path " +
+                         absolute_path_to_resources.string() + " to " +
+                         RESOURCES_FOLDER_NAME.string() + " does not exist.");
     }
     // if the above exists, the general path is correct!
     // just create the folders if the below path do not exist.

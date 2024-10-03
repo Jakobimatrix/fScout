@@ -19,25 +19,8 @@ DisplayQt::DisplayQt() : Display() {
 
   setCentralWidget(splitter);
 
-
-  // Create a scale chooser
-  QComboBox *scaleChooser = new QComboBox(this);
-  scaleChooser->addItems({"100%", "125%", "150%", "175%", "200%"});
-  scaleChooser->setCurrentIndex(0);  // Default to 100%
-
-  connect(scaleChooser, &QComboBox::currentTextChanged, this, &DisplayQt::onScaleChanged);
-
-  // Create a layout for the scale chooser
-  QWidget *topWidget = new QWidget(this);
-  QHBoxLayout *topLayout = new QHBoxLayout(topWidget);
-
-  // Right align the scale chooser
-  topLayout->addStretch();
-  topLayout->addWidget(scaleChooser);
-
   // Create a main layout to stack the top widget and the splitter
   QVBoxLayout *mainLayout = new QVBoxLayout;
-  mainLayout->addWidget(topWidget);
   mainLayout->addWidget(splitter);
 
   // Set main layout to a central widget
@@ -45,16 +28,20 @@ DisplayQt::DisplayQt() : Display() {
   centralWidget->setLayout(mainLayout);
   setCentralWidget(centralWidget);
 
-  QPoint qpos(getDisplayPosX(), getDisplayPosY());
-  QSize qsize(getDisplaySizeW(), getDisplaySizeH());
-  resize(qsize);
-  move(qpos);
-
   createActions();
   createMenus();
   createToolBars();
   createStatusBar();
   setUnifiedTitleAndToolBarOnMac(true);
+
+  // set size, pos,scale like user has saved
+  QPoint qpos(getDisplayPosX(), getDisplayPosY());
+  QSize qsize(getDisplaySizeW(), getDisplaySizeH());
+  resize(qsize);
+  move(qpos);
+
+  // Only scale the font. The window size was already set.
+  changeScale(getDisplayScale(), true);
 }
 
 void DisplayQt::resetDisplayElements() {
@@ -69,20 +56,58 @@ void DisplayQt::updateInfo(const std::string &root_path,
   finder_widget->updateInfo(root_path, saved, num_files, indexingDate);
 }
 
-void DisplayQt::onScaleChanged(const QString& scaleText) {
-    bool ok;
-    int scale = scaleText.left(scaleText.length() - 1).toInt(&ok); // Remove '%' and convert to int
+void DisplayQt::onScaleChanged(const QString &scaleText) {
+  bool ok;
+  int scale = scaleText.leftRef(scaleText.length() - 1).toInt(&ok);  // Remove '%' and convert to int
 
-    if (ok) {
-        QFont font = this->font();
-        font.setPointSizeF(font.pointSizeF() * (scale / 100.0));
-        setFont(font);
+  if (ok) {
+    changeScale(scale, false);
+    saveDisplayScale(scale);  // save new scale after setting it!
+  }
+}
 
-        // Adjust the entire window's scaling
-        resize(this->size() * (scale / 100.0));
-        finder_widget->resize(finder_widget->size() * (scale / 100.0));
-        finder_output_widget->resize(finder_output_widget->size() * (scale / 100.0));
-    }
+void DisplayQt::changeScale(const int scale, const bool is_scale_on_load) {
+  const double new_fraction = scale / 100.0;
+  const double old_inverse_fraction = 100. / static_cast<double>(getDisplayScale());
+  const double scale_fraction = new_fraction * old_inverse_fraction;
+
+  QFont font = this->font();
+  font.setPointSizeF(font.pointSizeF() * (is_scale_on_load ? new_fraction : scale_fraction));
+  setFont(font);
+
+  if (!is_scale_on_load) {  // on load resizes the windows already,  dont scale again.
+    resize(this->size() * scale_fraction);
+    finder_widget->resize(finder_widget->size() * scale_fraction);
+    finder_output_widget->resize(finder_output_widget->size() * scale_fraction);
+  }
+
+  // icons (not working :(
+  /*
+  const int scaledSize =
+      static_cast<int>(static_cast<double>(BASE_ICON_SIZE) * new_fraction);
+  for (auto it = actionIcons.begin(); it != actionIcons.end(); ++it) {
+    QAction *action = it->first;
+    QString iconPath = it->second;
+
+    // Load the original icon and scale it
+    QPixmap pixmap(iconPath);
+    QIcon scaledIcon(pixmap.scaled(scaledSize, scaledSize, Qt::KeepAspectRatio));
+
+    action->setIcon(scaledIcon);
+  }
+  */
+}
+
+const QStringList DisplayQt::getAvailableZoomLevels() {
+  return {"100%", "125%", "150%", "175%", "200%"};
+}
+
+const int DisplayQt::getCurrentZoomLevelIndex(int currentZoom) {
+  QStringList zoomLevels = getAvailableZoomLevels();
+  QString zoomText = QString::number(currentZoom) + "%";
+
+  int index = zoomLevels.indexOf(zoomText);
+  return (index != -1) ? index : 0;  // If zoom level not found, default to 100% (index 0)
 }
 
 void DisplayQt::close() { QMainWindow::close(); }
@@ -271,79 +296,89 @@ void DisplayQt::about() {
 
 
 void DisplayQt::createActions() {
-  const std::string path = Globals::getInstance().getAbsPath2Resources().string();
+  const auto &path = Globals::getInstance().getAbsPath2Resources();
 
-  // open
-  openAct = new QAction(QIcon((path + "open.png").c_str()), tr("&Open Folder..."), this);
-  openAct->setShortcuts(QKeySequence::Open);
-  openAct->setStatusTip(tr("Open the base of your search."));
-  connect(openAct, SIGNAL(triggered()), this, SLOT(open()));
+  // Helper function to create an action
+  auto createAction = [this](const QString &iconPath,
+                             const QString &actionText,
+                             const QString &statusTip,
+                             const QKeySequence &shortcut,
+                             auto (DisplayQt::*slot)()) -> QAction * {
+    QPixmap pixmap(iconPath);
+    QIcon icon(pixmap.scaled(BASE_ICON_SIZE, BASE_ICON_SIZE, Qt::KeepAspectRatio));
+    QAction *action = new QAction(icon, actionText, this);
+    action->setStatusTip(statusTip);
+    action->setShortcut(shortcut);
+    connect(action, &QAction::triggered, this, slot);
+    return action;
+  };
 
-  // load
-  loadAct = new QAction(QIcon((path + "load.png").c_str()), tr("&Load Index File..."), this);
-  loadAct->setShortcuts(QKeySequence::Open);
-  loadAct->setStatusTip(tr("Open an old indexed search."));
-  connect(loadAct, SIGNAL(triggered()), this, SLOT(load()));
+  // Create actions
+  const auto openPath = (path / "open.png").string();
+  openAct = createAction(openPath.c_str(),
+                         tr("&Open Folder..."),
+                         tr("Open the base of your search."),
+                         QKeySequence::Find,
+                         &DisplayQt::open);
+  actionIcons[openAct] = openPath.c_str();
 
-  // about
+  const auto loadPath = (path / "load.png").string();
+  loadAct = createAction(loadPath.c_str(),
+                         tr("&Load Index File..."),
+                         tr("Open an old indexed search."),
+                         QKeySequence::Open,
+                         &DisplayQt::load);
+  actionIcons[loadAct] = loadPath.c_str();
+
+  const auto savePath = (path / "save.png").string();
+  saveAct = createAction(savePath.c_str(),
+                         tr("&Save Current Index"),
+                         tr("Save the current search tree."),
+                         QKeySequence::Save,
+                         &DisplayQt::save);
+  actionIcons[saveAct] = savePath.c_str();
+
+  const auto exitPathPathPathPath = (path / "exit.png").string();
+  exitAct = createAction(exitPathPathPathPath.c_str(),
+                         tr("&Exit"),
+                         tr("Close the program."),
+                         QKeySequence::Close,
+                         &DisplayQt::close);
+  actionIcons[exitAct] = exitPathPathPathPath.c_str();
+
   aboutAct = new QAction(tr("About &Finder"), this);
   aboutAct->setStatusTip(tr("Show the Finders's About box."));
-  connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
-
-  // save
-  saveAct = new QAction(QIcon((path + "save.png").c_str()), tr("&Save Current Index"), this);
-  saveAct->setStatusTip(tr("Save the current search tree."));
-  connect(saveAct, SIGNAL(triggered()), this, SLOT(save()));
-
-  // run
-  runAct = new QAction(tr("start indexing"), this);
-  runAct->setStatusTip(tr("Run the indexing"));
-  connect(runAct, SIGNAL(triggered()), this, SLOT(run()));
-
-  // exit
-  exitAct = new QAction(tr("&Exit"), this);
-  exitAct->setStatusTip(tr("Close the program."));
-  connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
+  connect(aboutAct, &QAction::triggered, this, &DisplayQt::about);
 }
 
 void DisplayQt::createMenus() {
   fileMenu = menuBar()->addMenu(tr("&File"));
-  if (fileMenu == nullptr) {
-    ERROR("filemenue is nullptr :(");
-    return;
-  }
   fileMenu->addAction(openAct);
   fileMenu->addAction(loadAct);
   fileMenu->addAction(saveAct);
   fileMenu->addSeparator();
   fileMenu->addAction(exitAct);
 
-  editMenu = menuBar()->addMenu(tr("&Edit"));
-  //  editMenu->addAction(cutAct);
-  //  editMenu->addAction(copyAct);
-  //  editMenu->addAction(pasteAct);
-
-  runMenu = menuBar()->addMenu(tr("&Run"));
-  runMenu->addAction(runAct);
-
   menuBar()->addSeparator();
 
   helpMenu = menuBar()->addMenu(tr("&Help"));
-  helpMenu->addAction(aboutAct);
   helpMenu->addAction(aboutAct);
 }
 
 void DisplayQt::createToolBars() {
   fileToolBar = addToolBar(tr("File"));
   fileToolBar->addAction(openAct);
+  fileToolBar->addAction(loadAct);
   fileToolBar->addAction(saveAct);
+  fileToolBar->setIconSize(QSize(BASE_ICON_SIZE, BASE_ICON_SIZE));
 
   editToolBar = addToolBar(tr("Edit"));
-  //  editToolBar->addAction(cutAct);
-  //  editToolBar->addAction(copyAct);
-  //  editToolBar->addAction(pasteAct);
-
-  runToolBar = addToolBar(tr("run"));
+  // scale chooser
+  QComboBox *scaleChooser = new QComboBox(this);
+  scaleChooser->addItems(getAvailableZoomLevels());
+  scaleChooser->setCurrentIndex(getCurrentZoomLevelIndex(getDisplayScale()));
+  connect(scaleChooser, &QComboBox::currentTextChanged, this, &DisplayQt::onScaleChanged);
+  editToolBar->addWidget(scaleChooser);
 }
 
 void DisplayQt::createStatusBar() {

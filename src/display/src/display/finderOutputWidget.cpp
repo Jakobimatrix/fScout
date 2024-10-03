@@ -68,14 +68,39 @@ void FinderOutputWidget::setSearchResults(const std::vector<std::filesystem::pat
 
   // This will be executed by main Thread which updates the GUI correctly
 
+  // Disconnect previous connections to avoid multiple openings
+  disconnect(resultList, &QListWidget::itemClicked, nullptr, nullptr);
+
   resultList->clear();
   for (const auto &searchResult : searchResults) {
     QListWidgetItem *item = new QListWidgetItem(QString(searchResult.string().c_str()));
     resultList->addItem(item);
   }
 
+  // Connect the itemClicked signal
   connect(resultList, &QListWidget::itemClicked, [this](QListWidgetItem *item) {
-    QDesktopServices::openUrl(QUrl::fromLocalFile(item->text()));
+    if (!displayQt->openFolderBeneath()) {
+      QDesktopServices::openUrl(QUrl::fromLocalFile(item->text()));
+      return;
+    }
+    QString filePath = item->text();
+    QFileInfo fileInfo(filePath);
+
+    if (fileInfo.exists()) {
+      QString folderPath = fileInfo.absolutePath();
+
+      // For Windows, you can open the folder and highlight the file
+#ifdef Q_OS_WIN
+      QString command =
+          QString("explorer.exe /select,%1").arg(QDir::toNativeSeparators(filePath));
+      QProcess::startDetached(command);
+#else
+        // On other platforms (Linux/Mac), just open the folder
+        QDesktopServices::openUrl(QUrl::fromLocalFile(folderPath));
+#endif
+    } else {
+      QDesktopServices::openUrl(QUrl::fromLocalFile(item->text()));
+    }
   });
 }
 

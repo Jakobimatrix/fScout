@@ -56,7 +56,7 @@ class DisplayQt : public QMainWindow, public Display {
   void saveSplitterState();
 
  public slots:
-  void onScaleChanged(const QString& scaleText);
+  void onScaleChanged(const QString &scaleText);
 
 
  private slots:
@@ -72,8 +72,14 @@ class DisplayQt : public QMainWindow, public Display {
   void createMenus();
   void createToolBars();
   void createStatusBar();
+  void changeScale(const int scale, const bool is_scale_on_load);
+  const static QStringList getAvailableZoomLevels();
+  // Function to determine the index of the current zoom level based on the stored zoom
+  const static int getCurrentZoomLevelIndex(int currentZoom);
 
   // QT stuff
+  static constexpr int BASE_ICON_SIZE = 32;
+  std::map<QAction *, QString> actionIcons;
 
   QMenu *fileMenu;
   QMenu *editMenu;

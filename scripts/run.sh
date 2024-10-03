@@ -1,5 +1,5 @@
 #!/bin/bash
-name="finder_start"
+name="fScout_GUI"
 
 build_folder="../build"
 while getopts r: flag

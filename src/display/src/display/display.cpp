@@ -8,6 +8,8 @@ Display::Display()
     : Settings(Globals::getInstance().getPath2DisplaySettings()) {
   put<int, 4>(disp_pos_size[0], DISP_POS_SIZE, true);
   put<std::string>(split_widget_state, SPLIT_WIDGET_STATE, true);
+  put<int>(disp_scale, DISP_SCALE, true);
+  put<bool>(prefere_open_folder_beneath, PREFERE_OPEN_FOLDER_BENEATH, true);
 }
 
 Display::~Display() {
@@ -79,8 +81,10 @@ void Display::loadOldIndex() {
   if (finder.loadIndexFromFile(load_path)) {
     resetDisplayElements();
     setStatus("Indexing loaded.");
-    updateInfo(
-        finder.getRootFolder().string(), !need_save, finder.getNumEntries(), finder.getIndexingDate());
+    updateInfo(finder.getRootFolder().string(),
+               !need_save,
+               finder.getNumEntries(),
+               finder.getIndexingDate());
     return;
   }
   popup_error("Failed to load indexing.");
@@ -112,8 +116,10 @@ void Display::callbackIndexing(bool success, const std::string& msg) {
       setStatus("Indexing: " + msg);
     } else {
       setStatus("Indexing finnished: " + msg);
-      updateInfo(
-          finder.getRootFolder().string(), !need_save, finder.getNumEntries(), finder.getIndexingDate());
+      updateInfo(finder.getRootFolder().string(),
+                 !need_save,
+                 finder.getNumEntries(),
+                 finder.getIndexingDate());
     }
   } else {
     popup_error("Indexing stopped: " + msg);
