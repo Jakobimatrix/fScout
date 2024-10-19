@@ -1,5 +1,8 @@
 #include <finder/TreeNode.h>
 
+#include <fstream>
+#include <iostream>
+
 
 void TreeNode::serialize(std::ofstream& outFile) const {
   // Serialize leaf status
@@ -72,4 +75,63 @@ TreeNode* TreeNode::deserialize(std::ifstream& inFile) {
   }
 
   return node;
+}
+
+
+void TreeNode::print(const TreeNode* node, const std::string& prefix, bool is_last) {
+  std::string currentPrefix = prefix + (is_last ? "└" : "├");
+
+  if (node->_isLeaf) {
+    // Print the paths for leaf nodes
+    for (size_t i = 0; i < node->paths.size(); ++i) {
+      std::cout << currentPrefix << node->paths[i].filename().string() << " -> "
+                << node->paths[i].string() << "\n";
+      if (i != node->paths.size() - 1) {
+        currentPrefix = prefix + (is_last ? " " : "│");  // Align next path entries
+      }
+    }
+  }
+
+  // Iterate over the children
+  auto it = node->_children.begin();
+  while (it != node->_children.end()) {
+    bool lastChild = (std::next(it) == node->_children.end());
+    std::cout << prefix << (is_last ? " " : "│") << (lastChild ? "└" : "├")
+              << it->first << "\n";
+    print(it->second, prefix + (is_last ? " " : "│"), lastChild);
+    ++it;
+  }
+}
+
+void TreeNode::print2dot(const TreeNode* node, std::ofstream& file) {
+  static int nodeId = 0;  // Unique ID for each node
+  std::string currentNodeName = "N" + std::to_string(nodeId);
+  if (nodeId == 0) {
+    currentNodeName = "root";
+  }
+  ++nodeId;
+
+  // Print the current node
+  file << currentNodeName << ";\n";
+
+  // For leaf nodes, print their file paths
+  /*
+  if (node->_isLeaf) {
+    for (const auto& path : node->paths) {
+      std::string pathNodeName = currentNodeName + "_path_" + std::to_string(nodeId++);
+      file << pathNodeName << " [label=\"" << path.string() << "\" URL=\""
+           << path.string() << "\", shape=folder];\n";
+      file << currentNodeName << " -> " << pathNodeName << ";\n";
+    }
+  }*/
+
+  // Iterate over the children nodes
+  for (const auto& child : node->_children) {
+    std::string childNodeName = "N" + std::to_string(nodeId);
+
+    file << childNodeName << " [label=\"" << child.first << "\"];\n";
+    file << currentNodeName << "->" << childNodeName << " [dir=none];\n";
+
+    print2dot(child.second, file);  // Recursive call for each child
+  }
 }

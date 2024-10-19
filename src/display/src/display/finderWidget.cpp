@@ -47,8 +47,6 @@ QGroupBox *FinderWidget::create_controlls() {
 
   // Checkboxes for search patterns
   QCheckBox *exactSearchBox = new QCheckBox("Exact Search");
-  QCheckBox *caseInsensitiveSearchBox =
-      new QCheckBox("Case Insensitive Search");
   QCheckBox *fuzzySearchBox = new QCheckBox("Fuzzy Search");
   QCheckBox *wildcardSearchBox = new QCheckBox("Wildcard (*) Search");
   QLineEdit *wildcardCharInput = new QLineEdit;
@@ -62,7 +60,6 @@ QGroupBox *FinderWidget::create_controlls() {
   subsearchLengthInput->setValue(displayQt->getMinSubsearchSize());
 
   exactSearchBox->setChecked(displayQt->usesExactPattern());
-  caseInsensitiveSearchBox->setChecked(displayQt->usesCaseInsensitivePattern());
   fuzzySearchBox->setChecked(displayQt->usesFuzzyMatchPattern());
   wildcardSearchBox->setChecked(displayQt->usesWildcardPattern());
   subsearchSearchBox->setChecked(displayQt->usesSubsearchPattern());
@@ -70,9 +67,6 @@ QGroupBox *FinderWidget::create_controlls() {
   // Connect signals to displayQt for search patterns
   connect(exactSearchBox, &QCheckBox::stateChanged, displayQt, [this](int state) {
     displayQt->setUseExactMatchPattern(state == Qt::Checked);
-  });
-  connect(caseInsensitiveSearchBox, &QCheckBox::stateChanged, displayQt, [this](int state) {
-    displayQt->setUseCaseInsensitivePattern(state == Qt::Checked);
   });
   connect(fuzzySearchBox, &QCheckBox::stateChanged, displayQt, [this](int state) {
     displayQt->setUseFuzzyMatchPattern(state == Qt::Checked);
@@ -112,21 +106,25 @@ QGroupBox *FinderWidget::create_controlls() {
 
   // Add widgets to the grid layout
   grid->addWidget(exactSearchBox, 0, 0);
-  grid->addWidget(caseInsensitiveSearchBox, 1, 0);
-  grid->addWidget(fuzzySearchBox, 2, 0);
-  grid->addWidget(wildcardSearchBox, 3, 0);
+  grid->addWidget(fuzzySearchBox, 1, 0);
+  grid->addWidget(wildcardSearchBox, 2, 0);
   grid->addWidget(wildcardCharInput, 3, 1);
   grid->addWidget(subsearchSearchBox, 4, 0);
   grid->addWidget(subsearchLengthInput, 4, 1);
 
+  QCheckBox *searchHidden = new QCheckBox("Search hidden Objects");
   QCheckBox *searchFolders = new QCheckBox("Search Folder Names");
   QCheckBox *searchFiles = new QCheckBox("Search File Names");
   QCheckBox *howToOpenResults = new QCheckBox("Open Folder beneath Result");
 
+  searchHidden->setChecked(displayQt->searchHiddenObjects());
   searchFolders->setChecked(displayQt->isSetSearchFolderNames());
   searchFiles->setChecked(displayQt->isSetSearchFileNames());
   howToOpenResults->setChecked(displayQt->openFolderBeneath());
 
+  connect(searchHidden, &QCheckBox::stateChanged, displayQt, [this](int state) {
+    displayQt->setSearchHiddenObjects(state == Qt::Checked);
+  });
   connect(searchFolders, &QCheckBox::stateChanged, displayQt, [this](int state) {
     displayQt->setSearchForFolderNames(state == Qt::Checked);
   });
@@ -137,9 +135,10 @@ QGroupBox *FinderWidget::create_controlls() {
     displayQt->setOpenFolderBeneath(state == Qt::Checked);
   });
 
-  grid->addWidget(searchFolders, 5, 0);
-  grid->addWidget(searchFiles, 6, 0);
-  grid->addWidget(howToOpenResults, 7, 0);
+  grid->addWidget(searchHidden, 5, 0);
+  grid->addWidget(searchFolders, 6, 0);
+  grid->addWidget(searchFiles, 7, 0);
+  grid->addWidget(howToOpenResults, 8, 0);
 
   controlsGroup->setLayout(grid);
   return controlsGroup;

@@ -60,6 +60,7 @@ class DisplayQt : public QMainWindow, public Display {
   void about();
   void open();
   void close();
+  void visualize();
 
  private:
   void createActions();
@@ -75,18 +76,14 @@ class DisplayQt : public QMainWindow, public Display {
   static constexpr int BASE_ICON_SIZE = 32;
 
   QMenu *fileMenu;
-  QMenu *editMenu;
-  QMenu *runMenu;
   QMenu *helpMenu;
+  QMenu *editMenu;
   QToolBar *fileToolBar;
   QToolBar *editToolBar;
-  QToolBar *runToolBar;
   QAction *openAct;
-  QAction *loadAct;
-  QAction *saveAct;
-  QAction *runAct;
   QAction *exitAct;
   QAction *aboutAct;
+  QAction *visualizeAct;
 
   FinderWidget *finder_widget;
   FinderOutputWidget *finder_output_widget;

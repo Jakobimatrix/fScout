@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <functional>
+#include <globals/macros.hpp>
 #include <globals/timer.hpp>
 #include <iostream>
 #include <thread>
@@ -34,31 +35,59 @@ void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
   dictionary = std::make_unique<Dictionary>();
 
   workerThread = std::make_unique<std::thread>([this, callback]() {
-    try {
-      const std::chrono::milliseconds updateTime(40);
-      Timer t;
-      t.start();
-      numEntries = 0;
-      for (const auto& entry : std::filesystem::recursive_directory_iterator(this->root)) {
-        ++numEntries;
-        if (t.getPassedTime<std::chrono::milliseconds>() > updateTime) {
+    // List of directories to explore
+    std::vector<std::filesystem::path> directoriesToExplore = {this->root};
+    const std::chrono::milliseconds updateTime(40);
+    Timer t;
+    t.start();
+    Timer t2;
+    t2.start();
+    while (!directoriesToExplore.empty() && !stopWorking) {
+      std::filesystem::path currentPath = directoriesToExplore.back();
+      directoriesToExplore.pop_back();
+
+      try {
+        for (const auto& entry : std::filesystem::directory_iterator(currentPath)) {
           if (stopWorking) {
             callback(false, "Stopped by User.");
             return;
           }
-          t.start();
-          callback(true, std::to_string(numEntries) + " entries found");
+
+          if (std::filesystem::is_directory(entry.status())) {
+            const auto perm = std::filesystem::status(entry.path()).permissions();
+            if ((perm & std::filesystem::perms::owner_read) == std::filesystem::perms::none) {
+              continue;
+            }
+            if (!searchHiddenObjects &&
+                entry.path().parent_path().filename().string()[0] == '.') {
+              continue;
+            }
+            directoriesToExplore.push_back(entry.path());
+            dictionary->addPath(entry.path());
+          } else {
+            if (!searchHiddenObjects && entry.path().filename().string()[0] == '.') {
+              continue;
+            }
+            dictionary->addPath(entry.path());
+          }
+          ++numEntries;
+          if (t.getPassedTime<std::chrono::milliseconds>() > updateTime) {
+            t.start();
+            callback(true, std::to_string(numEntries) + " entries found");
+          }
         }
-        dictionary->addPath(entry.path());
+      } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "Skipping directory due to error: " << e.what() << std::endl;
+        continue;
       }
-
-      fullyIndexed = true;
-      indexingTime = std::chrono::steady_clock::now();
-      callback(true, std::to_string(numEntries) + " entries found");
-
-    } catch (const std::filesystem::filesystem_error& e) {
-      callback(false, std::string("Filesystem error: " + std::string(e.what())));
     }
+
+    fullyIndexed = true;
+    indexingTime = std::chrono::steady_clock::now();
+    callback(true,
+             std::to_string(numEntries) + " entries found within " +
+                 std::to_string(t2.getPassedTime<std::chrono::milliseconds>().count()) +
+                 "ms");
   });
 }
 
@@ -109,8 +138,8 @@ void Finder::search(const std::string needle /*intentional copy*/,
                     const CallbackSearchResult& callback) {
   stopCurrentWorker();
   workerThread = std::make_unique<std::thread>([this, callback, needle]() {
-    std::vector<std::filesystem::path> results = dictionary->advancedSearch(
-        needle, getActiveSearchPatterns(), useCaseInsensitivePattern);
+    std::vector<std::filesystem::path> results =
+        dictionary->search(needle, getActiveSearchPatterns());
     if (!searchForFileNames) {  // TODO this is very inefficient, maxbe 2 different trees?
       results.erase(std::remove_if(results.begin(),
                                    results.end(),

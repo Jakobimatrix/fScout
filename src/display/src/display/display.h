@@ -26,9 +26,7 @@ class Display : public util::Settings {
   void setUseExactMatchPattern(bool use) {
     finder.setUseExactMatchPattern(use);
   }
-  void setUseCaseInsensitivePattern(bool use) {
-    finder.setUseCaseInsensitivePattern(use);
-  }
+
   void setUseFuzzyMatchPattern(bool use) {
     finder.setUseFuzzyMatchPattern(use);
   }
@@ -46,9 +44,6 @@ class Display : public util::Settings {
   }
 
   bool usesExactPattern() const { return finder.usesExactPattern(); }
-  bool usesCaseInsensitivePattern() const {
-    return finder.usesCaseInsensitivePattern();
-  }
   bool usesFuzzyMatchPattern() const { return finder.usesFuzzyMatchPattern(); }
   bool usesWildcardPattern() const { return finder.usesWildcardPattern(); }
   bool usesSubsearchPattern() const { return finder.usesSubsetPattern(); }
@@ -59,6 +54,10 @@ class Display : public util::Settings {
     return finder.isSetSearchFolderNames();
   }
   bool openFolderBeneath() const { return prefere_open_folder_beneath; }
+  bool searchHiddenObjects() const { return finder.isSetSearchHiddenObjects(); }
+  void setSearchHiddenObjects(const bool searchHidden) {
+    finder.setSearchHiddenObjects(searchHidden);
+  }
   void setOpenFolderBeneath(const bool open_folder_beneath) {
     prefere_open_folder_beneath = open_folder_beneath;
   }
@@ -69,6 +68,7 @@ class Display : public util::Settings {
   // user interaktions
   void open();
   void save();
+  void visualize() const;
   void loadOldIndex();
 
   /*!

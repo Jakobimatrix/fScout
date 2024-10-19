@@ -37,57 +37,29 @@ void Tree::traverse(const TreeNode *rootSubT,
   }
 }
 
-void Tree::findPrefixMatchesHelper(const TreeNode *nodePtr,
-                                   const std::string &prefix,
-                                   const std::string &currentPrefix,
-                                   std::vector<std::filesystem::path> &result,
-                                   bool caseInsensitive) const {
-  if (prefix.empty()) {
+void Tree::searchHelper(const TreeNode *nodePtr,
+                        const std::string &needle,
+                        const std::string &currentPrefix,
+                        std::vector<std::filesystem::path> &result) const {
+  if (needle.empty()) {
     // Base case: we’ve processed all prefix characters, traverse the remaining tree
     traverse(nodePtr, currentPrefix, result);
     return;
   }
 
-  char letter = prefix[0];
-  std::string remainingPrefix = prefix.substr(1);
+  char letter = needle[0];
+  std::string remainingPrefix = needle.substr(1);
 
-  // Handle case-insensitivity by checking both upper and lower case possibilities
-  if (caseInsensitive) {
-    char lowerLetter = std::tolower(letter);
-    char upperLetter = std::toupper(letter);
-
-    // Try with lowercase variant
-    auto itLower = nodePtr->_children.find(lowerLetter);
-    if (itLower != nodePtr->_children.end()) {
-      findPrefixMatchesHelper(
-          itLower->second, remainingPrefix, currentPrefix + lowerLetter, result, true);
-    }
-    if (lowerLetter == upperLetter) {
-      return;
-    }
-
-    // Try with uppercase variant
-    auto itUpper = nodePtr->_children.find(upperLetter);
-    if (itUpper != nodePtr->_children.end() && upperLetter != lowerLetter) {
-      findPrefixMatchesHelper(
-          itUpper->second, remainingPrefix, currentPrefix + upperLetter, result, true);
-    }
-  } else {
-    // Case-sensitive search, use the exact letter
-    auto it = nodePtr->_children.find(letter);
-    if (it != nodePtr->_children.end()) {
-      findPrefixMatchesHelper(
-          it->second, remainingPrefix, currentPrefix + letter, result, false);
-    }
+  auto it = nodePtr->_children.find(letter);
+  if (it != nodePtr->_children.end()) {
+    searchHelper(it->second, remainingPrefix, currentPrefix + letter, result);
   }
 }
 
-std::vector<std::filesystem::path> Tree::findPrefixMatches(const std::string &prefix,
-                                                           bool caseInsensitive) const {
+std::vector<std::filesystem::path> Tree::search(const std::string &needle) const {
   std::vector<std::filesystem::path> result;
   const TreeNode *nodePtr = _root.get();
-
-  findPrefixMatchesHelper(nodePtr, prefix, "", result, caseInsensitive);
+  searchHelper(nodePtr, needle, "", result);
   return result;
 }
 
@@ -97,4 +69,16 @@ void Tree::serialize(std::ofstream &outFile) const {
 
 void Tree::deserialize(std::ifstream &inFile) {
   _root = std::unique_ptr<TreeNode>(TreeNode::deserialize(inFile));
+}
+
+void Tree::print() const { TreeNode::print(_root.get(), "", true); }
+
+void Tree::generateDotFile(const std::string &filename) const {
+  std::ofstream file(filename);
+  file << "digraph Tree {\n";
+  file << "rankdir=\"LR\";\n";
+  file << "node [shape=circle];\n";
+  TreeNode::print2dot(_root.get(), file);
+  file << "}\n";
+  file.close();
 }

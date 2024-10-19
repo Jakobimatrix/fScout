@@ -250,6 +250,8 @@ void DisplayQt::about() {
 
 void DisplayQt::open() { Display::open(); }
 
+void DisplayQt::visualize() { Display::visualize(); }
+
 void DisplayQt::createActions() {
   const auto &path = Globals::getInstance().getAbsPath2Resources();
 
@@ -276,6 +278,13 @@ void DisplayQt::createActions() {
                          QKeySequence::Find,
                          &DisplayQt::open);
 
+  const auto visualizePath = (path / "visualize.png").string();
+  visualizeAct = createAction(visualizePath.c_str(),
+                              tr("&Visualize Dictionary..."),
+                              tr("Visualize the Indexing strategy."),
+                              QKeySequence::Print,
+                              &DisplayQt::visualize);
+
 
   const auto exitPathPathPathPath = (path / "exit.png").string();
   exitAct = createAction(exitPathPathPathPath.c_str(),
@@ -292,10 +301,13 @@ void DisplayQt::createActions() {
 void DisplayQt::createMenus() {
   fileMenu = menuBar()->addMenu(tr("&File"));
   fileMenu->addAction(openAct);
-  // fileMenu->addAction(loadAct);
-  // fileMenu->addAction(saveAct);
   fileMenu->addSeparator();
   fileMenu->addAction(exitAct);
+
+  menuBar()->addSeparator();
+
+  editMenu = menuBar()->addMenu(tr("&Edit"));
+  editMenu->addAction(visualizeAct);
 
   menuBar()->addSeparator();
 
@@ -306,11 +318,10 @@ void DisplayQt::createMenus() {
 void DisplayQt::createToolBars() {
   fileToolBar = addToolBar(tr("File"));
   fileToolBar->addAction(openAct);
-  // fileToolBar->addAction(loadAct);
-  // fileToolBar->addAction(saveAct);
   fileToolBar->setIconSize(QSize(BASE_ICON_SIZE, BASE_ICON_SIZE));
 
   editToolBar = addToolBar(tr("Edit"));
+  editToolBar->addAction(visualizeAct);
   // scale chooser
   QComboBox *scaleChooser = new QComboBox(this);
   scaleChooser->addItems(getAvailableZoomLevels());

@@ -8,38 +8,29 @@
 #include <set>
 #include <string>
 
-Dictionary::Dictionary() {}
+Dictionary::Dictionary() { tree = std::make_unique<Tree>(); }
 
 Dictionary::~Dictionary() = default;
 
 
 void Dictionary::addPath(const std::filesystem::path& path) {
   const bool is_file = path.has_filename();
-  const std::string name =
-      (is_file ? path.filename() : path.parent_path().filename()).string();
-  for (size_t i = 0; i < name.size(); ++i) {
-    if (trees.size() <= i) {
-      trees.push_back(std::move(std::make_unique<Tree>()));
-    }
-    std::string subName(name, i);  // folder_name, older_name, lder_name,..., e
-    trees[i]->insertWord(subName, path);
-  }
+  std::string name = (is_file ? path.filename() : path.parent_path().filename()).string();
+  // to save storage and computation time, we save everything lower case.
+  // The scoring function at the end will score exact matches better than case insensitive matches.
+  std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+  tree->insertWord(name, path);
 }
 
-std::vector<std::filesystem::path> Dictionary::findPrefixMatches(const std::string& prefix,
-                                                                 const bool caseInsensitive) const {
-  if (trees.empty()) {
-    return {};
-  }
-  return trees[0]->findPrefixMatches(prefix, caseInsensitive);
-}
 
-std::vector<std::filesystem::path> Dictionary::advancedSearch(
-    const std::string& needle,
-    const std::vector<std::unique_ptr<SearchPattern>>& patterns,
-    const bool caseInsensitive) const {
+std::vector<std::filesystem::path> Dictionary::search(
+    const std::string& needle_in,
+    const std::vector<std::unique_ptr<SearchPattern>>& patterns) const {
   std::vector<std::string> allNeedles;
-
+  // to save storage and computation time, we save everything lower case.
+  // The scoring function at the end will score exact matches better than case insensitive matches.
+  std::string needle = needle_in;
+  std::transform(needle.begin(), needle.end(), needle.begin(), ::tolower);
   // Generate needles using each pattern
   for (const auto& pattern : patterns) {
     auto needles = pattern->generateNeedles(needle);
@@ -52,12 +43,9 @@ std::vector<std::filesystem::path> Dictionary::advancedSearch(
     if (min_search_size > newNeedle.size()) {
       continue;
     }
-    for (const auto& tree : trees) {
-      auto matches = tree->findPrefixMatches(newNeedle, caseInsensitive);
-      for (const auto& match : matches) {
-
-        scoredResults.emplace(scoreMatch(needle, match.filename().string()), match);
-      }
+    auto matches = tree->search(newNeedle);
+    for (const auto& match : matches) {
+      scoredResults.emplace(scoreMatch(needle, match.filename().string()), match);
     }
   }
   std::set<std::filesystem::path> seenPaths;
@@ -92,14 +80,7 @@ void Dictionary::serialize(const std::string& filename,
           .count();
   outFile.write(reinterpret_cast<const char*>(&timeSinceEpoch), sizeof(timeSinceEpoch));
 
-  // Write the number of trees
-  size_t treeCount = trees.size();
-  outFile.write(reinterpret_cast<const char*>(&treeCount), sizeof(treeCount));
-
-  // Serialize each tree in the vector
-  for (const auto& tree : trees) {
-    tree->serialize(outFile);
-  }
+  tree->serialize(outFile);
 
   outFile.close();
 }
@@ -139,19 +120,8 @@ void Dictionary::deserialize(const std::string& filename,
   *timeOfIndexing =
       std::chrono::steady_clock::time_point(std::chrono::seconds(timeSinceEpoch));
 
-  // Read the number of trees
-  size_t treeCount;
-  inFile.read(reinterpret_cast<char*>(&treeCount), sizeof(treeCount));
-
-  trees.clear();
-  trees.reserve(treeCount);
-
-  // Deserialize each tree and add it to the vector
-  for (size_t i = 0; i < treeCount; ++i) {
-    auto tree = std::make_unique<Tree>();
-    tree->deserialize(inFile);
-    trees.push_back(std::move(tree));
-  }
+  tree = std::make_unique<Tree>();
+  tree->deserialize(inFile);
 
   inFile.close();
 }
@@ -229,4 +199,10 @@ int Dictionary::scoreMatch(const std::string& needle, const std::string& match) 
   }
 
   return bestScore;
+}
+
+void Dictionary::visualize() const {
+  // tree->print();
+  tree->generateDotFile(
+      (Globals::getInstance().getAbsPath2Resources() / "map.dot").string());
 }

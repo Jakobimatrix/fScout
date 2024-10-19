@@ -2,7 +2,7 @@
 name="fScout_GUI"
 
 build_folder="../build"
-while getopts r: flag
+while getopts r flag
 do
     case "${flag}" in
         r) build_folder="../build_release";;

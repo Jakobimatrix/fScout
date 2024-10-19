@@ -72,6 +72,7 @@ if(WIN32)
 endif()
 
 # Add submodules for project organization
+add_subdirectory(src/utils)
 add_subdirectory(src/settings)
 add_subdirectory(src/globals)
 add_subdirectory(src/finder)

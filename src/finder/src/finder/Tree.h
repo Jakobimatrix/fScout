@@ -22,16 +22,17 @@ class Tree {
 
   void insertWord(const std::string &, const std::filesystem::path &);
 
-  void findPrefixMatchesHelper(const TreeNode *nodePtr,
-                               const std::string &prefix,
-                               const std::string &currentPrefix,
-                               std::vector<std::filesystem::path> &result,
-                               bool caseInsensitive) const;
-  std::vector<std::filesystem::path> findPrefixMatches(const std::string &,
-                                                       const bool caseInsensitive) const;
+  void searchHelper(const TreeNode *nodePtr,
+                    const std::string &prefix,
+                    const std::string &currentPrefix,
+                    std::vector<std::filesystem::path> &result) const;
+  std::vector<std::filesystem::path> search(const std::string &) const;
 
   void serialize(std::ofstream &outFile) const;
   void deserialize(std::ifstream &inFile);
+
+  void print() const;
+  void generateDotFile(const std::string &filename) const;
 
  private:
   void traverse(const TreeNode *, const std::string &, std::vector<std::filesystem::path> &) const;

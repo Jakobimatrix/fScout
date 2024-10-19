@@ -24,6 +24,8 @@ Display::~Display() {
   }
 }
 
+void Display::visualize() const { finder.visualize(); }
+
 void Display::save() {
   // todo
   // go into cache folder

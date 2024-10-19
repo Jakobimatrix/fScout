@@ -62,7 +62,11 @@ class Globals {
 
  public:
   std::filesystem::path getPath2DisplaySettings() const {
-    return absolute_path_to_settings / FILE_NAME_SETTINGS;
+    return absolute_path_to_settings / FILE_NAME_DISPLAY_SETTINGS;
+  }
+
+  std::filesystem::path getPath2fScoutSettings() const {
+    return absolute_path_to_settings / FILE_NAME_FSCOUT_SETTINGS;
   }
 
   const std::filesystem::path& getAbsPath2Resources() const {
@@ -103,7 +107,9 @@ class Globals {
   const std::filesystem::path SETTINGS_FOLDER_NAME = "settings";
 
   // File names
-  const std::filesystem::path FILE_NAME_SETTINGS = "user_settings.txt";
+  const std::filesystem::path FILE_NAME_DISPLAY_SETTINGS =
+      "display_settings.txt";
+  const std::filesystem::path FILE_NAME_FSCOUT_SETTINGS = "fScout_settings.txt";
 
   // Strings
   const std::string MAIN_WINDOW_NAME = std::string("fScout");

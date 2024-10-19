@@ -22,4 +22,8 @@ struct TreeNode {
 
   void serialize(std::ofstream& outFile) const;
   static TreeNode* deserialize(std::ifstream& inFile);
+
+  static void print(const TreeNode* node, const std::string& prefix, bool is_last);
+
+  static void print2dot(const TreeNode* node, std::ofstream& file);
 };
