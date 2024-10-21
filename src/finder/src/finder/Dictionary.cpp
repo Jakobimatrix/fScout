@@ -7,6 +7,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <utils/filesystem/filesystem.hpp>
 
 Dictionary::Dictionary() { tree = std::make_unique<Tree>(); }
 
@@ -14,8 +15,7 @@ Dictionary::~Dictionary() = default;
 
 
 void Dictionary::addPath(const std::filesystem::path& path) {
-  const bool is_file = path.has_filename();
-  std::string name = (is_file ? path.filename() : path.parent_path().filename()).string();
+  std::string name = util::getFileName(path);
   // to save storage and computation time, we save everything lower case.
   // The scoring function at the end will score exact matches better than case insensitive matches.
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);

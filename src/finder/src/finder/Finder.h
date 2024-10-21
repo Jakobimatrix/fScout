@@ -8,10 +8,14 @@
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <set>
 #include <settings.hpp>
+#include <string>
 #include <thread>
 
-class Finder : public util::Settings<> {
+using FinderSettings =
+    util::Settings<std::variant<bool *, size_t *, char *, std::set<std::string> *>>;
+class Finder : public FinderSettings {
   std::filesystem::path root = std::filesystem::path();
   bool fullyIndexed = false;
   std::unique_ptr<Dictionary> dictionary;
@@ -25,6 +29,7 @@ class Finder : public util::Settings<> {
 
  public:
   Finder();
+  ~Finder();
   bool isInitiated() const;
   bool isWorking() const;
   void stopCurrentWorker();
@@ -72,6 +77,8 @@ class Finder : public util::Settings<> {
   void visualize() const { dictionary->visualize(); }
 
  private:
+  void setDefaultSearchExceptions();
+  bool shouldIndexEntry(const std::filesystem::directory_entry &entry) const;
   void startIndexing(const CallbackFinnished &);
   std::vector<std::unique_ptr<SearchPattern>> getActiveSearchPatterns() const;
 
@@ -87,14 +94,14 @@ class Finder : public util::Settings<> {
   bool useSubsetPattern = false;
   const std::string USE_SubSet_PATTERN = "UseSubSetPattern";
   size_t minSubPatternSize = 3;
-  const std::string UBSET_SIZE = "SubsetSize";
+  const std::string SUBSET_SIZE = "SubsetSize";
   bool searchForFolderNames = true;
   const std::string SEACH_FOLDERS = "SearchFolders";
   bool searchForFileNames = true;
   const std::string SEACH_FILES = "SearchFiles";
   bool searchHiddenObjects = false;
   const std::string SEACH_HIDDEN_OBJECTS = "SearchHiddenObjects";
-  std::vector<std::string> exceptions;
+  std::set<std::string> exceptions;
   const std::string SEACH_EXEPTIONS = "SearchExceptions";
 
   std::chrono::steady_clock::time_point indexingTime;

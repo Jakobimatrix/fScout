@@ -2,12 +2,116 @@
 
 #include <filesystem>
 #include <functional>
+#include <globals/globals.hpp>
 #include <globals/macros.hpp>
 #include <globals/timer.hpp>
 #include <iostream>
 #include <thread>
+#include <utils/filesystem/filesystem.hpp>
 
-Finder::Finder() {}
+#ifdef _WIN32
+#include "fileapi.h"
+#endif
+
+Finder::Finder()
+    : FinderSettings(Globals::getInstance().getPath2fScoutSettings()) {
+  setDefaultSearchExceptions();
+  put<bool>(useExactMatchPattern, USE_EXACT_PATTERN, true);
+  put<bool>(useFuzzyMatchPattern, USE_FUZZY_PATTERN, true);
+  put<bool>(useWildcardPattern, USE_WILDCARD_PATTERN, true);
+  put<char>(wildcard, WILDCARD_PATTERN, true);
+  put<bool>(useSubsetPattern, USE_SubSet_PATTERN, true);
+  put<size_t>(minSubPatternSize, SUBSET_SIZE, true);
+  put<bool>(searchForFolderNames, SEACH_FOLDERS, true);
+  put<bool>(searchForFileNames, SEACH_FILES, true);
+  put<bool>(searchHiddenObjects, SEACH_HIDDEN_OBJECTS, true);
+  put<std::set<std::string>>(exceptions, SEACH_EXEPTIONS, true);
+}
+Finder::~Finder() { save(); }
+
+void Finder::setDefaultSearchExceptions() {
+  // Version control directories (Git): Contains repo metadata and history, not useful for search
+  exceptions.insert(".git");
+
+  // Version control directories (Subversion): Similar to .git, holds metadata for SVN
+  exceptions.insert(".svn");
+
+  // Version control directories (Mercurial): Another version control metadata directory
+  exceptions.insert(".hg");
+
+  // macOS-specific metadata file: Stores custom folder view options and icon positions, not useful for search
+  exceptions.insert(".DS_Store");
+
+  // Linux/macOS trash folder: Contains deleted files, usually irrelevant for searching
+  exceptions.insert(".Trash");
+
+  // Common cache directory: Stores temporary files, caching data not relevant for search results
+  exceptions.insert(".cache");
+
+#ifdef _WIN32
+  // Windows AppData: Contains user-specific settings, cache, and temporary files, typically irrelevant
+  exceptions.insert("AppData");
+
+  // Windows system files: Core OS files, users shouldn't search these for regular files
+  exceptions.insert("Program Files");
+  exceptions.insert("Program Files (x86)");
+  exceptions.insert("Windows");
+
+  // Windows recycle bin: Stores deleted files, irrelevant for searches
+  exceptions.insert("$Recycle.Bin");
+
+  // Windows paging file: A system file for virtual memory management
+  exceptions.insert("pagefile.sys");
+
+  // Windows hibernation file: Stores the system's state when hibernating
+  exceptions.insert("hiberfil.sys");
+
+  // Windows system volume information: Contains restore points and other system-level data
+  exceptions.insert("System Volume Information");
+
+  // Windows swap file: Temporary file used for system memory management
+  exceptions.insert("swapfile.sys");
+
+  // Windows old system data (post-upgrade): Contains previous versions of Windows, typically irrelevant
+  exceptions.insert("Windows.old");
+
+  // Windows temporary internet files: Stores cached files from web browsing, unnecessary for file searches
+  exceptions.insert("Temporary Internet Files");
+
+  // Windows local settings: Stores various temporary and cache files
+  exceptions.insert("Local Settings");
+#else
+  // Unix/Linux system directories: Core OS directories not relevant for file search
+  exceptions.insert("/bin");
+  exceptions.insert("/boot");
+  exceptions.insert("/dev");
+  exceptions.insert("/etc");
+  exceptions.insert("/lib");
+  exceptions.insert("/lib32");
+  exceptions.insert("/lib64");
+  exceptions.insert("/lost+found");
+  exceptions.insert("/media");
+  exceptions.insert("/mnt");
+  exceptions.insert("/proc");
+  exceptions.insert("/root");
+  exceptions.insert("/run");
+  exceptions.insert("/sbin");
+  exceptions.insert("/sys");
+  exceptions.insert("/tmp");
+  exceptions.insert("/usr");
+  exceptions.insert("/var");
+
+  // Linux/macOS local folder: Contains data used by programs
+  exceptions.insert(".local");
+
+  // Linux/macOS thumbnail cache: Stores image thumbnails for quick preview, not useful for file searches
+  exceptions.insert(".thumbnails");
+
+  // Installation Folder for windows executable under linux, not usefull for file search
+  exceptions.insert(".wine");
+#endif
+}
+
 bool Finder::isInitiated() const { return fullyIndexed; }
 bool Finder::isWorking() const {
   if (workerThread && workerThread->joinable()) {
@@ -27,7 +131,60 @@ void Finder::stopCurrentWorker() {
   stopWorking = false;
 }
 
+bool Finder::shouldIndexEntry(const std::filesystem::directory_entry& entry) const {
+  // Exclude directories or files with no read permissions
+  const auto perm = std::filesystem::status(entry.path()).permissions();
+  if ((perm & std::filesystem::perms::owner_read) == std::filesystem::perms::none) {
+    return false;
+  }
+
+  const auto filename = util::getFileName(entry);
+  // Exclude hidden objects (if not searching hidden objects)
+  if (!searchHiddenObjects) {
+    if (filename.empty() || filename[0] == '.') {
+      return false;
+    }
+  }
+
+  if (!std::filesystem::is_directory(entry.status())) {
+    return true;
+  }
+  // check exception directories
+
+
+#ifdef _WIN32
+  constexpr bool onUnix(false);
+#else
+  constexpr bool onUnix(true);
+#endif
+  // Check if we're on Unix (Linux/macOS) and if entry is a directory at the root level
+  if (onUnix && root == std::filesystem::path("/") && entry.path().parent_path() == root) {
+    if (exceptions.find("/" + filename) != exceptions.end()) {
+      return false;
+    }
+  } else {
+    // Check if the folder is in the exceptions set (O(log n) lookup)
+    if (exceptions.find(filename) != exceptions.end()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
+
+#ifdef _WIN32
+  auto isJunction = [](const auto& entry) {
+    // Check for junctions on Windows (treat them like symlinks)
+    DWORD attributes = GetFileAttributesW(entry.path().c_str());
+    return attributes != INVALID_FILE_ATTRIBUTES &&
+           (attributes & FILE_ATTRIBUTE_REPARSE_POINT);
+  };
+#else
+  constexpr bool isJunction(false);
+#endif
+
   // Stop any currently running indexing thread
   stopCurrentWorker();
 
@@ -54,23 +211,17 @@ void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
             return;
           }
 
-          if (std::filesystem::is_directory(entry.status())) {
-            const auto perm = std::filesystem::status(entry.path()).permissions();
-            if ((perm & std::filesystem::perms::owner_read) == std::filesystem::perms::none) {
-              continue;
-            }
-            if (!searchHiddenObjects &&
-                entry.path().parent_path().filename().string()[0] == '.') {
-              continue;
-            }
-            directoriesToExplore.push_back(entry.path());
-            dictionary->addPath(entry.path());
-          } else {
-            if (!searchHiddenObjects && entry.path().filename().string()[0] == '.') {
-              continue;
-            }
-            dictionary->addPath(entry.path());
+          if (!shouldIndexEntry(entry)) {
+            continue;
           }
+
+          // dont folow symlinks/junctions, they could create a circle!
+          if (!isJunction && std::filesystem::is_directory(entry.status()) &&
+              !std::filesystem::is_symlink(entry.status())) {
+            directoriesToExplore.push_back(entry.path());
+          }
+          dictionary->addPath(entry.path());
+
           ++numEntries;
           if (t.getPassedTime<std::chrono::milliseconds>() > updateTime) {
             t.start();

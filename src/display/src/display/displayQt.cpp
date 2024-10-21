@@ -42,6 +42,11 @@ DisplayQt::DisplayQt() : Display() {
 
   // Only scale the font. The window size was already set.
   changeScale(getDisplayScale(), true);
+
+  const auto &path = Globals::getInstance().getAbsPath2Resources();
+  QPixmap pixmap((path / "open.png").string().c_str());
+  QIcon icon(pixmap.scaled(BASE_ICON_SIZE, BASE_ICON_SIZE, Qt::KeepAspectRatio));
+  setWindowIcon(icon);
 }
 
 void DisplayQt::resetDisplayElements() {

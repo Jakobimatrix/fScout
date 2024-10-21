@@ -8,6 +8,7 @@ add_library(finder_lib STATIC
 
 target_link_libraries(finder_lib
   settings_lib_1.0.0
+  utils_lib_0.0.1
   globals_lib
   )
 

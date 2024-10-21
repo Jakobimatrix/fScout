@@ -5,7 +5,7 @@
 #include <globals/macros.hpp>
 
 Display::Display()
-    : Settings(Globals::getInstance().getPath2DisplaySettings()) {
+    : DisplaySettings(Globals::getInstance().getPath2DisplaySettings()) {
   put<int, 4>(disp_pos_size[0], DISP_POS_SIZE, true);
   put<std::string>(split_widget_state, SPLIT_WIDGET_STATE, true);
   put<int>(disp_scale, DISP_SCALE, true);
@@ -18,6 +18,7 @@ Display::~Display() {
   }
   try {
     DisplaySettings::save();
+    finder.save();
   } catch (...) {
     F_ERROR("Failed to write into Display Settings: %s",
             Globals::getInstance().getPath2DisplaySettings().string().c_str());
