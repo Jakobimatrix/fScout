@@ -50,6 +50,17 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# supress console on release mode for windows
+if (WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Release")
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # For MinGW (GCC on Windows)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-subsystem,windows")
+  else()
+    # For MSVC
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
+  endif()
+endif()
+
 message("############### BUILD TYPE: ${CMAKE_BUILD_TYPE} ###############")
 
 # Auto-run Qt's meta-object compiler (moc), resource compiler (rcc), and user interface compiler (uic)
