@@ -8,7 +8,7 @@ add_library(display_lib STATIC
 
 target_link_libraries(display_lib
   Qt5::Widgets
-  settings_lib
+  settings_lib_1.0.0
   globals_lib
   finder_lib
   )

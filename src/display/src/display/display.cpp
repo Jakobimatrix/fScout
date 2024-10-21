@@ -17,7 +17,7 @@ Display::~Display() {
     ERROR("Could not exit gracefully :(");
   }
   try {
-    util::Settings::save();
+    DisplaySettings::save();
   } catch (...) {
     F_ERROR("Failed to write into Display Settings: %s",
             Globals::getInstance().getPath2DisplaySettings().string().c_str());

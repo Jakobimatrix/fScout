@@ -1,3 +1,6 @@
 [submodule "src/settings"]
 	path = src/settings
 	url = git@github.com:Jakobimatrix/settings.git
+[submodule "src/utils"]
+	path = src/utils
+	url = git@github.com:Jakobimatrix/utils.git

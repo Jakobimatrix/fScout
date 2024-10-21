@@ -7,6 +7,7 @@
 #include <iostream>
 #include <thread>
 
+Finder::Finder() {}
 bool Finder::isInitiated() const { return fullyIndexed; }
 bool Finder::isWorking() const {
   if (workerThread && workerThread->joinable()) {

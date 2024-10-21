@@ -11,7 +11,7 @@
 #include <settings.hpp>
 #include <thread>
 
-class Finder : public util::Settings {
+class Finder : public util::Settings<> {
   std::filesystem::path root = std::filesystem::path();
   bool fullyIndexed = false;
   std::unique_ptr<Dictionary> dictionary;

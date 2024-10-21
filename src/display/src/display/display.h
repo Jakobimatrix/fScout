@@ -13,7 +13,8 @@
 // thouse are handled by the respecting child class which uses a lib or whatever to actually
 // display things. This allowes changeing the engine which displays without needing to rewrite
 // code regarding the functions apart from displaying things.
-class Display : public util::Settings {
+using DisplaySettings = util::Settings<>;
+class Display : public DisplaySettings {
  public:
   Display();
 
