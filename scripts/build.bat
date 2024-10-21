@@ -58,7 +58,7 @@ REM Set the path to windeployqt based on the build bit
 set windeployqt_path=C:\Qt\5.15.2\mingw81_%build_bit%\bin\windeployqt.exe
 
 REM Copy necessary DLLs using windeployqt
-%windeployqt_path% "%build_folder%\src\executable\finder_start.exe"
+%windeployqt_path% "%build_folder%\src\executable\fScout_GUI.exe"
 
 REM Retrieve version from CMakeLists.txt
 for /f "tokens=2" %%i in ('findstr "project(fScout VERSION" "%source_folder%\CMakeLists.txt"') do set version=%%i

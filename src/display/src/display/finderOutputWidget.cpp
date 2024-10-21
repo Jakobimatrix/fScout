@@ -19,6 +19,10 @@
 #include <globals/macros.hpp>
 #include <string>
 
+#ifdef Q_OS_WIN
+#include <QProcess>
+#endif
+
 FinderOutputWidget::FinderOutputWidget(QWidget *parent)
     : QWidget(parent), displayQt(reinterpret_cast<DisplayQt *>(parent)) {
   QVBoxLayout *layout = new QVBoxLayout;
@@ -65,9 +69,9 @@ QGroupBox *FinderOutputWidget::create_resultField() {
 
       // For Windows, open folder and highlight file
 #ifdef Q_OS_WIN
-      QString command =
-          QString("explorer.exe /select,%1").arg(QDir::toNativeSeparators(filePath));
-      QProcess::startDetached(command);
+     /* QString command =
+          QString("explorer.exe /select,%1").arg(QDir::toNativeSeparators(filePath));*/
+      QProcess::startDetached("explorer.exe", {"/select,", QDir::toNativeSeparators(filePath)});
 #else
         // On other platforms, just open the folder
         QDesktopServices::openUrl(QUrl::fromLocalFile(folderPath));
