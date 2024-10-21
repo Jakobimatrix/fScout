@@ -174,16 +174,7 @@ bool Finder::shouldIndexEntry(const std::filesystem::directory_entry& entry) con
 
 void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
 
-#ifdef _WIN32
-  auto isJunction = [](const auto& entry) {
-    // Check for junctions on Windows (treat them like symlinks)
-    DWORD attributes = GetFileAttributesW(entry.path().c_str());
-    return attributes != INVALID_FILE_ATTRIBUTES &&
-           (attributes & FILE_ATTRIBUTE_REPARSE_POINT);
-  };
-#else
-  constexpr bool isJunction(false);
-#endif
+
 
   // Stop any currently running indexing thread
   stopCurrentWorker();
@@ -193,6 +184,20 @@ void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
   dictionary = std::make_unique<Dictionary>();
 
   workerThread = std::make_unique<std::thread>([this, callback]() {
+
+#ifdef _WIN32
+  auto isJunction = [](const auto& entry) {
+    // Check for junctions on Windows (treat them like symlinks)
+    DWORD attributes = GetFileAttributesW(entry.path().c_str());
+    return attributes != INVALID_FILE_ATTRIBUTES &&
+           (attributes & FILE_ATTRIBUTE_REPARSE_POINT);
+  };
+#else
+  auto isJunction = [](const auto&) {
+    return false;
+  };
+#endif
+
     // List of directories to explore
     std::vector<std::filesystem::path> directoriesToExplore = {this->root};
     const std::chrono::milliseconds updateTime(40);
@@ -216,7 +221,7 @@ void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
           }
 
           // dont folow symlinks/junctions, they could create a circle!
-          if (!isJunction && std::filesystem::is_directory(entry.status()) &&
+          if (!isJunction(entry) && std::filesystem::is_directory(entry.status()) &&
               !std::filesystem::is_symlink(entry.status())) {
             directoriesToExplore.push_back(entry.path());
           }
