@@ -138,7 +138,8 @@ bool Finder::shouldIndexEntry(const std::filesystem::directory_entry& entry) con
     return false;
   }
 
-  const auto filename = util::getFileName(entry);
+  const auto filename = util::getLastPathComponent(entry);
+  std::cerr << "should we index " << filename << "? from " << entry << std::endl;
   // Exclude hidden objects (if not searching hidden objects)
   if (!searchHiddenObjects) {
     if (filename.empty() || filename[0] == '.') {
@@ -186,16 +187,14 @@ void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
   workerThread = std::make_unique<std::thread>([this, callback]() {
 
 #ifdef _WIN32
-  auto isJunction = [](const auto& entry) {
-    // Check for junctions on Windows (treat them like symlinks)
-    DWORD attributes = GetFileAttributesW(entry.path().c_str());
-    return attributes != INVALID_FILE_ATTRIBUTES &&
-           (attributes & FILE_ATTRIBUTE_REPARSE_POINT);
-  };
+    auto isJunction = [](const auto& entry) {
+      // Check for junctions on Windows (treat them like symlinks)
+      DWORD attributes = GetFileAttributesW(entry.path().c_str());
+      return attributes != INVALID_FILE_ATTRIBUTES &&
+             (attributes & FILE_ATTRIBUTE_REPARSE_POINT);
+    };
 #else
-  auto isJunction = [](const auto&) {
-    return false;
-  };
+    auto isJunction = [](const auto&) { return false; };
 #endif
 
     // List of directories to explore

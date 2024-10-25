@@ -15,7 +15,12 @@ Dictionary::~Dictionary() = default;
 
 
 void Dictionary::addPath(const std::filesystem::path& path) {
+
+
   std::string name = util::getFileName(path);
+
+  std::cerr << "save: " << name << " - at:" << path << std::endl;
+
   // to save storage and computation time, we save everything lower case.
   // The scoring function at the end will score exact matches better than case insensitive matches.
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);
