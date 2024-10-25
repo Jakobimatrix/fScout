@@ -24,7 +24,8 @@ class FinderOutputWidget : public QWidget {
 
   void reset();
 
-  void setSearchResults(const std::vector<std::filesystem::path> &searchResults);
+  void setSearchResults(const std::vector<std::filesystem::path> &searchResults,
+                        const std::string &search);
 
  protected:
  protected slots:

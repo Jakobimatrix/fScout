@@ -17,9 +17,7 @@ Dictionary::~Dictionary() = default;
 void Dictionary::addPath(const std::filesystem::path& path) {
 
 
-  std::string name = util::getFileName(path);
-
-  std::cerr << "save: " << name << " - at:" << path << std::endl;
+  std::string name = util::getLastPathComponent(path);
 
   // to save storage and computation time, we save everything lower case.
   // The scoring function at the end will score exact matches better than case insensitive matches.
@@ -50,7 +48,7 @@ std::vector<std::filesystem::path> Dictionary::search(
     }
     auto matches = tree->search(newNeedle);
     for (const auto& match : matches) {
-      scoredResults.emplace(scoreMatch(needle, match.filename().string()), match);
+      scoredResults.emplace(scoreMatch(needle, util::getLastPathComponent(match)), match);
     }
   }
   std::set<std::filesystem::path> seenPaths;
@@ -131,7 +129,7 @@ void Dictionary::deserialize(const std::string& filename,
   inFile.close();
 }
 
-int Dictionary::scoreMatch(const std::string& needle, const std::string& match) const {
+int Dictionary::scoreChars(char a, char b) {
   // Commonly mixed-up character pairs
   // clang-format off
   static const std::unordered_map<char, std::vector<char>> confusedChars = {
@@ -162,32 +160,25 @@ int Dictionary::scoreMatch(const std::string& needle, const std::string& match) 
   };
   // clang-format on
 
-  // Helper function to score individual character pairs
-  auto scoreChars = [&](char a, char b) -> int {
-    if (a == b) {
-      return 0;  // Exact match
-    }
-    if (std::tolower(a) == std::tolower(b)) {
-      return 1;  // Case mismatch
-    }
-    // Check if they are commonly mixed up
-    if ((confusedChars.count(a) &&
-         std::find(confusedChars.at(a).begin(), confusedChars.at(a).end(), b) !=
-             confusedChars.at(a).end()) ||
-        (confusedChars.count(b) &&
-         std::find(confusedChars.at(b).begin(), confusedChars.at(b).end(), a) !=
-             confusedChars.at(b).end())) {
-      return 2;  // Commonly confused characters
-    }
-    // Case mismatch + confused characters
-    if (std::tolower(a) != std::tolower(b) && confusedChars.count(std::tolower(a)) &&
-        std::find(confusedChars.at(std::tolower(a)).begin(),
-                  confusedChars.at(std::tolower(a)).end(),
-                  std::tolower(b)) != confusedChars.at(std::tolower(a)).end()) {
-      return 3;
-    }
-    return 4;  // Total mismatch
-  };
+  if (a == b)
+    return 0;  // Exact match
+  if (std::tolower(a) == std::tolower(b))
+    return 1;  // Case mismatch
+
+  // Commonly confused characters
+  if ((confusedChars.count(a) &&
+       std::find(confusedChars.at(a).begin(), confusedChars.at(a).end(), b) !=
+           confusedChars.at(a).end()) ||
+      (confusedChars.count(b) &&
+       std::find(confusedChars.at(b).begin(), confusedChars.at(b).end(), a) !=
+           confusedChars.at(b).end())) {
+    return 2;
+  }
+
+  return 3;  // Total mismatch
+}
+
+int Dictionary::scoreMatch(const std::string& needle, const std::string& match) {
 
   int bestScore = std::numeric_limits<int>::max();
 
@@ -204,6 +195,26 @@ int Dictionary::scoreMatch(const std::string& needle, const std::string& match) 
   }
 
   return bestScore;
+}
+
+std::vector<int> Dictionary::getMatchScores(const std::string& needle,
+                                            const std::string& match) {
+  std::vector<int> charScores(needle.size(), 4);  // Initialize with max score for no match
+
+  for (int offset = -(int)needle.size() + 1; offset < (int)match.size(); ++offset) {
+    std::vector<int> tempScores(needle.size(), 4);  // Temporary scores for current offset
+    for (int i = 0; i < (int)needle.size(); ++i) {
+      int matchIdx = i + offset;
+      if (matchIdx >= 0 && matchIdx < (int)match.size()) {
+        tempScores[i] = scoreChars(needle[i], match[matchIdx]);
+      }
+    }
+    // Update scores with best score found so far for each character
+    for (int i = 0; i < (int)needle.size(); ++i) {
+      charScores[i] = std::min(charScores[i], tempScores[i]);
+    }
+  }
+  return charScores;
 }
 
 void Dictionary::visualize() const {

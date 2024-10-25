@@ -139,7 +139,6 @@ bool Finder::shouldIndexEntry(const std::filesystem::directory_entry& entry) con
   }
 
   const auto filename = util::getLastPathComponent(entry);
-  std::cerr << "should we index " << filename << "? from " << entry << std::endl;
   // Exclude hidden objects (if not searching hidden objects)
   if (!searchHiddenObjects) {
     if (filename.empty() || filename[0] == '.') {
@@ -313,7 +312,7 @@ void Finder::search(const std::string needle /*intentional copy*/,
                                    }),
                     results.end());
     }
-    callback(true, results);
+    callback(true, results, needle);
   });
 }
 

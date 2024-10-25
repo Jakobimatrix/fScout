@@ -60,7 +60,8 @@ QString HoverableListWidget::shortenPathWithEllipsis(const QString &fullPath) co
 }
 
 void HoverableListWidget::addSearchResultItem(const QString &fullPath) {
-  QListWidgetItem *item = new QListWidgetItem(shortenPathWithEllipsis(fullPath));
+  QListWidgetItem *item = new QListWidgetItem(fullPath);
   item->setToolTip(fullPath);
+  item->setFlags(item->flags() | Qt::ItemIsSelectable);
   addItem(item);
 }

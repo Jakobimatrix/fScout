@@ -23,7 +23,8 @@ class DisplayQt : public QMainWindow, public Display {
   void resizeEvent(QResizeEvent *event) override;
   void moveEvent(QMoveEvent *event) override;
 
-  void setSearchResults(const std::vector<std::filesystem::path> &searchResults) override;
+  void setSearchResults(const std::vector<std::filesystem::path> &searchResults,
+                        const std::string &search) override;
 
  private:
   void setStatus(const std::string &msg, int timeout = 0) override;

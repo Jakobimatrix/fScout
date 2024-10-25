@@ -18,6 +18,7 @@
 #include <QVBoxLayout>
 #include <globals/macros.hpp>
 #include <string>
+#include <utils/filesystem/filesystem.hpp>
 
 #ifdef Q_OS_WIN
 #include <QProcess>
@@ -53,6 +54,7 @@ QGroupBox *FinderOutputWidget::create_resultField() {
   QVBoxLayout *vbox = new QVBoxLayout;
   resultList = new HoverableListWidget(this);
   resultList->setToolTipDuration(10000);
+  resultList->setItemDelegate(new RichTextDelegate(resultList));
 
   connect(resultList, &QListWidget::itemClicked, [this](QListWidgetItem *item) {
     DEBUG("connect on click");
@@ -69,9 +71,10 @@ QGroupBox *FinderOutputWidget::create_resultField() {
 
       // For Windows, open folder and highlight file
 #ifdef Q_OS_WIN
-     /* QString command =
-          QString("explorer.exe /select,%1").arg(QDir::toNativeSeparators(filePath));*/
-      QProcess::startDetached("explorer.exe", {"/select,", QDir::toNativeSeparators(filePath)});
+      /* QString command =
+           QString("explorer.exe /select,%1").arg(QDir::toNativeSeparators(filePath));*/
+      QProcess::startDetached("explorer.exe",
+                              {"/select,", QDir::toNativeSeparators(filePath)});
 #else
         // On other platforms, just open the folder
         QDesktopServices::openUrl(QUrl::fromLocalFile(folderPath));
@@ -87,22 +90,46 @@ QGroupBox *FinderOutputWidget::create_resultField() {
 }
 
 
-void FinderOutputWidget::setSearchResults(const std::vector<std::filesystem::path> &searchResults) {
+void FinderOutputWidget::setSearchResults(const std::vector<std::filesystem::path> &searchResults,
+                                          const std::string &search) {
   if (QThread::currentThread() != this->thread()) {
     auto searchResultsCopy = searchResults;  // make a copy
+    auto searchCopy = search;                // make a copy
     QMetaObject::invokeMethod(
         this,
-        [this, searchResultsCopy]() { setSearchResults(searchResultsCopy); },
+        [this, searchResultsCopy, searchCopy]() {
+          setSearchResults(searchResultsCopy, searchCopy);
+        },
         Qt::QueuedConnection);
     return;
   }
 
   resultList->clear();
 
+  static std::unordered_map<int, QString> scoreEmphasis = {
+      {0, "color: green; font-weight: bold;"},    // Exact match
+      {1, "color: green; font-weight: italic;"},  // Case mismatch
+      {2, "color: blue;"},                        // Confused character
+      {3, "color: black;"},                       // Total mismatch
+  };
 
-  for (const auto &searchResult : searchResults) {
-    QString fullPath = QString::fromStdString(searchResult.string());
-    resultList->addSearchResultItem(fullPath);
+  for (const std::filesystem::path &searchResult : searchResults) {
+    std::string match = util::getLastPathComponent(searchResult);
+    std::vector<int> scores = Dictionary::getMatchScores(search, match);
+
+    QString emphasizedMatch;
+    for (size_t i = 0; i < match.size(); ++i) {
+      QString style = scoreEmphasis[scores[i]];
+      emphasizedMatch +=
+          QString("<span style='%1'>%2</span>").arg(style).arg(QString(match[i]));
+    }
+
+    // Build final HTML string for full path
+    QString fullPathStr =
+        QString::fromStdString(searchResult.parent_path().string()) + "/" + emphasizedMatch;
+
+    // Add as rich text item
+    resultList->addSearchResultItem(fullPathStr);
   }
 }
 

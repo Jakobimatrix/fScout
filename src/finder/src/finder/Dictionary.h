@@ -28,9 +28,13 @@ class Dictionary {
 
   void visualize() const;
 
+
+
+  static int scoreChars(char a, char b);
+  static int scoreMatch(const std::string &needle, const std::string &match);
+  static std::vector<int> getMatchScores(const std::string &needle, const std::string &match);
+
  private:
   std::unique_ptr<Tree> tree;
   size_t min_search_size = 3;
-
-  int scoreMatch(const std::string &needle, const std::string &match) const;
 };

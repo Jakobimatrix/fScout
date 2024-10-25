@@ -134,8 +134,10 @@ class Display : public DisplaySettings {
   /*!
    * \brief Display the search results
    * \param results The results of a search
+   * \param search The original search string
    */
-  virtual void setSearchResults(const std::vector<std::filesystem::path>& searchResults) = 0;
+  virtual void setSearchResults(const std::vector<std::filesystem::path>& searchResults,
+                                const std::string& search) = 0;
 
   /*!
    * \brief Reset Display to "uninitiated"
@@ -191,7 +193,9 @@ class Display : public DisplaySettings {
 
  private:
   void callbackIndexing(bool success, const std::string& msg);
-  void callbackSearch(bool finnished, const std::vector<std::filesystem::path>& results);
+  void callbackSearch(bool finnished,
+                      const std::vector<std::filesystem::path>& results,
+                      const std::string& search);
 
 
   // calculation

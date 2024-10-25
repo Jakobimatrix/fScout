@@ -91,13 +91,18 @@ void Display::search(const std::string& needel) {
   }
   last_search = needel;
   setStatus("Search for " + needel);
-  finder.search(
-      needel, std::bind(&Display::callbackSearch, this, std::placeholders::_1, std::placeholders::_2));
+  finder.search(needel,
+                std::bind(&Display::callbackSearch,
+                          this,
+                          std::placeholders::_1,
+                          std::placeholders::_2,
+                          std::placeholders::_3));
 }
 
 void Display::callbackSearch(bool finnished,
-                             const std::vector<std::filesystem::path>& results) {
-  setSearchResults(results);
+                             const std::vector<std::filesystem::path>& results,
+                             const std::string& search) {
+  setSearchResults(results, search);
   if (finnished) {
     setStatus("Search finnished");
   }

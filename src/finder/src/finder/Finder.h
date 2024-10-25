@@ -24,7 +24,7 @@ class Finder : public FinderSettings {
 
   using CallbackFinnished = std::function<void(const bool, const std::string &msg)>;
   using CallbackSearchResult =
-      std::function<void(const bool, const std::vector<std::filesystem::path> &)>;
+      std::function<void(const bool, const std::vector<std::filesystem::path> &, const std::string &)>;
   size_t numEntries = 0;
 
  public:

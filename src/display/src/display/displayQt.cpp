@@ -344,6 +344,7 @@ void DisplayQt::createStatusBar() {
 }
 
 
-void DisplayQt::setSearchResults(const std::vector<std::filesystem::path> &searchResults) {
-  finder_output_widget->setSearchResults(searchResults);
+void DisplayQt::setSearchResults(const std::vector<std::filesystem::path> &searchResults,
+                                 const std::string &search) {
+  finder_output_widget->setSearchResults(searchResults, search);
 }
