@@ -61,6 +61,14 @@ HoverableListWidget::HoverableListWidget(QWidget *parent)
     pendingItem = item;  // Store item for use in single-click action
     clickTimer.start(getDoubleClickInterval());
   });
+
+#ifdef Q_OS_WIN
+  // windows does not propergate the itemCLicked twice on a double click, linux does...
+  connect(this, &QListWidget::itemDoubleClicked, [this](QListWidgetItem *item) {
+    pendingItem = nullptr;
+    QDesktopServices::openUrl(QUrl::fromLocalFile(item->toolTip()));
+});
+#endif
 }
 
 void HoverableListWidget::mouseMoveEvent(QMouseEvent *event) {
