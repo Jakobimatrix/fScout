@@ -92,7 +92,7 @@ int HoverableListWidget::getWordWidth(const QString &word) const {
 QString HoverableListWidget::shortenPathWithEllipsis(const QString &leftPathPart,
                                                      const QString &rightPathPart) const {
   QFontMetrics metrics(font());
-  constexpr int MAGIC_PADDING = 23;
+  constexpr int MAGIC_PADDING = 25;
   const int availableWidth =
       viewport()->width() - MAGIC_PADDING - metrics.width(rightPathPart);
 
@@ -144,18 +144,16 @@ void HoverableListWidget::clear() {
 }
 
 void HoverableListWidget::changeScale(const double scale_factor) {
-  return;
-  /*
-  QFont font = this->font();
-  font.setPointSizeF(font.pointSizeF() * scale_factor);
+    QFont font = this->font();
+    font.setPointSizeF(font.pointSizeF() * scale_factor);
+    setFont(font);  // Apply to all items
 
-  // Update each item
-  for (int i = 0; i < count(); ++i) {
-    QListWidgetItem *item = this->item(i);
-    item->setFont(font);  // Apply new font size to item
-  }
+    // Notify the delegate/view to update item sizes
+    updateGeometries();
+    for (int i = 0; i < count(); ++i) {
+        item(i)->setSizeHint(sizeHintForIndex(model()->index(i, 0)));
+    }
 
-  // Optionally, repaint to ensure the layout updates immediately
-  update();
-*/
+    // Optionally, force a repaint to make sure changes appear immediately
+    viewport()->update();
 }

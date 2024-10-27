@@ -16,12 +16,13 @@ class RichTextDelegate : public QStyledItemDelegate {
   using QStyledItemDelegate::QStyledItemDelegate;
 
   // Calculate item height based on HTML content
-  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override {
+QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override {
     QTextDocument doc;
+    doc.setDefaultFont(option.font);  // Use scaled font size
     doc.setHtml(index.data().toString());
     doc.setTextWidth(option.rect.width());  // Match document width to item width
     return QSize(option.rect.width(), doc.size().height());
-  }
+}
 
   // Render HTML content with hover and selection effects
   void paint(QPainter *painter,
