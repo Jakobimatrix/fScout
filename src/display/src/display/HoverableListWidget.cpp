@@ -9,6 +9,10 @@
 #include <QResizeEvent>
 #include <QToolTip>
 #include <QUrl>
+#ifdef Q_OS_WIN
+#include <QProcess>
+#endif
+
 #include <utils/filesystem/filesystem.hpp>
 
 HoverableListWidget::HoverableListWidget(QWidget *parent)

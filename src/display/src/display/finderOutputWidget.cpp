@@ -19,10 +19,6 @@
 #include <globals/macros.hpp>
 #include <string>
 
-#ifdef Q_OS_WIN
-#include <QProcess>
-#endif
-
 FinderOutputWidget::FinderOutputWidget(QWidget *parent)
     : QWidget(parent), displayQt(reinterpret_cast<DisplayQt *>(parent)) {
   QVBoxLayout *layout = new QVBoxLayout();
