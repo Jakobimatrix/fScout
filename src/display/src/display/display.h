@@ -24,9 +24,6 @@ class Display : public DisplaySettings {
 
   // <SEARCH> functionallity is public for Bad Boy reinterpret_cast<come and arrestme> magic
   void search(const std::string&);
-  void setUseExactMatchPattern(bool use) {
-    finder.setUseExactMatchPattern(use);
-  }
 
   void setUseFuzzyMatchPattern(bool use) {
     finder.setUseFuzzyMatchPattern(use);
@@ -44,7 +41,6 @@ class Display : public DisplaySettings {
     finder.setMinSubPatternSize(size);
   }
 
-  bool usesExactPattern() const { return finder.usesExactPattern(); }
   bool usesFuzzyMatchPattern() const { return finder.usesFuzzyMatchPattern(); }
   bool usesWildcardPattern() const { return finder.usesWildcardPattern(); }
   bool usesSubsearchPattern() const { return finder.usesSubsetPattern(); }

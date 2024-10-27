@@ -17,6 +17,8 @@ HoverableListWidget::HoverableListWidget(QWidget *parent)
 
   clickTimer.setSingleShot(true);
 
+  // This logic stil has some issues for example clickeing two different items within double click duration... But oh well
+
   // Handle single-click logic when the timer times out
   connect(&clickTimer, &QTimer::timeout, this, [this]() {
     // save the pointer for edgecase that secons dingle click and time out occure parallel
@@ -99,10 +101,10 @@ void HoverableListWidget::addSearchResultItem(const std::filesystem::path &searc
                                               const std::string &search) {
 
   static std::unordered_map<int, QString> scoreEmphasis = {
-      {0, "color: green; font-weight: bold;"},    // Exact match
-      {1, "color: green; font-weight: italic;"},  // Case mismatch
-      {2, "color: blue;"},                        // Confused character
-      {3, "color: black;"},                       // Total mismatch
+      {3, "color: green; font-weight: bold;"},    // Exact match
+      {2, "color: green; font-weight: italic;"},  // Case mismatch
+      {1, "color: blue;"},                        // Confused character
+      {0, "color: black;"},                       // Total mismatch
   };
 
   std::string match = util::getLastPathComponent(searchResult);

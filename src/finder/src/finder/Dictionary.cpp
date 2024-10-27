@@ -40,7 +40,7 @@ std::vector<std::filesystem::path> Dictionary::search(
     allNeedles.insert(allNeedles.end(), needles.begin(), needles.end());
   }
 
-  std::multimap<int, std::filesystem::path> scoredResults;
+  std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults;
 
   for (const auto& newNeedle : allNeedles) {
     if (min_search_size > newNeedle.size()) {
@@ -48,7 +48,7 @@ std::vector<std::filesystem::path> Dictionary::search(
     }
     auto matches = tree->search(newNeedle);
     for (const auto& match : matches) {
-      scoredResults.emplace(scoreMatch(needle, util::getLastPathComponent(match)), match);
+      scoredResults.emplace(scoreMatch(needle_in, util::getLastPathComponent(match)), match);
     }
   }
   std::set<std::filesystem::path> seenPaths;
@@ -161,9 +161,9 @@ int Dictionary::scoreChars(char a, char b) {
   // clang-format on
 
   if (a == b)
-    return 0;  // Exact match
+    return 3;  // Exact match
   if (std::tolower(a) == std::tolower(b))
-    return 1;  // Case mismatch
+    return 2;  // Case mismatch
 
   // Commonly confused characters
   if ((confusedChars.count(a) &&
@@ -172,46 +172,60 @@ int Dictionary::scoreChars(char a, char b) {
       (confusedChars.count(b) &&
        std::find(confusedChars.at(b).begin(), confusedChars.at(b).end(), a) !=
            confusedChars.at(b).end())) {
-    return 2;
+    return 1;
   }
 
-  return 3;  // Total mismatch
+  return 0;  // Total mismatch
 }
 
-int Dictionary::scoreMatch(const std::string& needle, const std::string& match) {
+int Dictionary::scoreMatch(const std::string& searchString, const std::string& match) {
 
-  int bestScore = std::numeric_limits<int>::max();
+  int bestScore = 0;
 
-  // Loop over all valid translations where needle and match fully overlap
-  for (int offset = -(int)needle.size() + 1; offset < (int)match.size(); ++offset) {
+  // Loop over all valid translations where searchString and match fully overlap
+  for (int offset = -(int)searchString.size() + 1; offset < (int)match.size(); ++offset) {
     int score = 0;
-    for (int i = 0; i < (int)needle.size(); ++i) {
+    for (int i = 0; i < (int)searchString.size(); ++i) {
       int matchIdx = i + offset;
       if (matchIdx >= 0 && matchIdx < (int)match.size()) {
-        score += scoreChars(needle[i], match[matchIdx]);
+        score += scoreChars(searchString[i], match[matchIdx]);
       }
     }
-    bestScore = std::min(bestScore, score);
+    bestScore = std::max(bestScore, score);
   }
-
   return bestScore;
 }
 
-std::vector<int> Dictionary::getMatchScores(const std::string& needle,
+std::vector<int> Dictionary::getMatchScores(const std::string& searchString,
                                             const std::string& match) {
-  std::vector<int> charScores(needle.size(), 4);  // Initialize with max score for no match
+  std::vector<int> charScores(match.size());
+  std::vector<int> bestScores;
+  int bestScoreOffset = -(int)searchString.size() + 1;
+  int bestScore = 0;
 
-  for (int offset = -(int)needle.size() + 1; offset < (int)match.size(); ++offset) {
-    std::vector<int> tempScores(needle.size(), 4);  // Temporary scores for current offset
-    for (int i = 0; i < (int)needle.size(); ++i) {
+  for (int offset = -(int)searchString.size() + 1; offset < (int)match.size(); ++offset) {
+    std::vector<int> tempScores;
+    int score = 0;
+    for (int i = 0; i < (int)searchString.size(); ++i) {
       int matchIdx = i + offset;
       if (matchIdx >= 0 && matchIdx < (int)match.size()) {
-        tempScores[i] = scoreChars(needle[i], match[matchIdx]);
+        tempScores.push_back(scoreChars(searchString[i], match[matchIdx]));
+        score += tempScores.back();
       }
     }
-    // Update scores with best score found so far for each character
-    for (int i = 0; i < (int)needle.size(); ++i) {
-      charScores[i] = std::min(charScores[i], tempScores[i]);
+
+    if (bestScore < score) {
+      bestScore = score;
+      bestScoreOffset = offset;
+      bestScores = tempScores;
+    }
+  }
+  for (int i = 0; i < (int)charScores.size(); ++i) {
+    int matchIdx = i - bestScoreOffset;
+    if (matchIdx < 0 || matchIdx > (int)bestScores.size()) {
+      charScores[i] = 0;
+    } else {
+      charScores[i] = bestScores[matchIdx];
     }
   }
   return charScores;

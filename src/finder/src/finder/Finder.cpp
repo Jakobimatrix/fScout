@@ -16,7 +16,6 @@
 Finder::Finder()
     : FinderSettings(Globals::getInstance().getPath2fScoutSettings()) {
   setDefaultSearchExceptions();
-  put<bool>(useExactMatchPattern, USE_EXACT_PATTERN, true);
   put<bool>(useFuzzyMatchPattern, USE_FUZZY_PATTERN, true);
   put<bool>(useWildcardPattern, USE_WILDCARD_PATTERN, true);
   put<char>(wildcard, WILDCARD_PATTERN, true);
@@ -318,9 +317,7 @@ void Finder::search(const std::string needle /*intentional copy*/,
 
 std::vector<std::unique_ptr<SearchPattern>> Finder::getActiveSearchPatterns() const {
   std::vector<std::unique_ptr<SearchPattern>> patterns;
-  if (useExactMatchPattern) {
-    patterns.emplace_back(std::make_unique<ExactMatchPattern>());
-  }
+  patterns.emplace_back(std::make_unique<ExactMatchPattern>());
   if (useFuzzyMatchPattern) {
     patterns.emplace_back(std::make_unique<FuzzyMatchPattern>());
   }

@@ -41,14 +41,12 @@ class Finder : public FinderSettings {
   bool saveCurrentIndex(const std::filesystem::path &);
   bool loadIndexFromFile(const std::filesystem::path &);
 
-  bool usesExactPattern() const { return useExactMatchPattern; }
   bool usesFuzzyMatchPattern() const { return useFuzzyMatchPattern; }
   bool usesWildcardPattern() const { return useWildcardPattern; }
   char getWindcard() const { return wildcard; }
   bool usesSubsetPattern() const { return useSubsetPattern; }
   size_t getMinSubPatternSearchSize() const { return minSubPatternSize; }
 
-  void setUseExactMatchPattern(const bool use) { useExactMatchPattern = use; }
 
   void setUseFuzzyMatchPattern(const bool use) { useFuzzyMatchPattern = use; }
   void setUseWildcardPattern(const bool use) { useWildcardPattern = use; }
@@ -83,8 +81,6 @@ class Finder : public FinderSettings {
   std::vector<std::unique_ptr<SearchPattern>> getActiveSearchPatterns() const;
 
   // SETTINGS
-  bool useExactMatchPattern = true;
-  const std::string USE_EXACT_PATTERN = "UseExactPattern";
   bool useFuzzyMatchPattern = true;
   const std::string USE_FUZZY_PATTERN = "UseFuzzyPattern";
   bool useWildcardPattern = false;

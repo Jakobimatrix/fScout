@@ -46,7 +46,6 @@ QGroupBox *FinderWidget::create_controlls() {
   QGridLayout *grid = new QGridLayout;
 
   // Checkboxes for search patterns
-  QCheckBox *exactSearchBox = new QCheckBox("Exact Search");
   QCheckBox *fuzzySearchBox = new QCheckBox("Fuzzy Search");
   QCheckBox *wildcardSearchBox = new QCheckBox("Wildcard (*) Search");
   QLineEdit *wildcardCharInput = new QLineEdit;
@@ -60,15 +59,11 @@ QGroupBox *FinderWidget::create_controlls() {
   subsearchLengthInput->setMaximum(20);
   subsearchLengthInput->setValue(displayQt->getMinSubsearchSize());
 
-  exactSearchBox->setChecked(displayQt->usesExactPattern());
   fuzzySearchBox->setChecked(displayQt->usesFuzzyMatchPattern());
   wildcardSearchBox->setChecked(displayQt->usesWildcardPattern());
   subsearchSearchBox->setChecked(displayQt->usesSubsearchPattern());
 
   // Connect signals to displayQt for search patterns
-  connect(exactSearchBox, &QCheckBox::stateChanged, displayQt, [this](int state) {
-    displayQt->setUseExactMatchPattern(state == Qt::Checked);
-  });
   connect(fuzzySearchBox, &QCheckBox::stateChanged, displayQt, [this](int state) {
     displayQt->setUseFuzzyMatchPattern(state == Qt::Checked);
   });
@@ -106,12 +101,12 @@ QGroupBox *FinderWidget::create_controlls() {
           [this](int value) { displayQt->setMinSubsearchSize(value); });
 
   // Add widgets to the grid layout
-  grid->addWidget(exactSearchBox, 0, 0);
-  grid->addWidget(fuzzySearchBox, 1, 0);
-  grid->addWidget(wildcardSearchBox, 2, 0);
-  grid->addWidget(wildcardCharInput, 3, 1);
-  grid->addWidget(subsearchSearchBox, 4, 0);
-  grid->addWidget(subsearchLengthInput, 4, 1);
+  int row = 0;
+  grid->addWidget(fuzzySearchBox, row++, 0);
+  grid->addWidget(wildcardSearchBox, row, 0);
+  grid->addWidget(wildcardCharInput, row++, 1);
+  grid->addWidget(subsearchSearchBox, row, 0);
+  grid->addWidget(subsearchLengthInput, row++, 1);
 
   QCheckBox *searchHidden = new QCheckBox("Search hidden Objects");
   QCheckBox *searchFolders = new QCheckBox("Search Folder Names");
@@ -141,11 +136,11 @@ QGroupBox *FinderWidget::create_controlls() {
           displayQt,
           [this](int value) { displayQt->setDoubleClickInterval(value); });
 
-  grid->addWidget(searchHidden, 5, 0);
-  grid->addWidget(searchFolders, 6, 0);
-  grid->addWidget(searchFiles, 7, 0);
-  grid->addWidget(doubleClickDuration, 8, 0);
-  grid->addWidget(doubleClickDurationInput, 8, 1);
+  grid->addWidget(searchHidden, row++, 0);
+  grid->addWidget(searchFolders, row++, 0);
+  grid->addWidget(searchFiles, row++, 0);
+  grid->addWidget(doubleClickDuration, row, 0);
+  grid->addWidget(doubleClickDurationInput, row++, 1);
 
 
   controlsGroup->setLayout(grid);
