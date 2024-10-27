@@ -250,7 +250,7 @@ void DisplayQt::setStatus(const QString &msg, int timeout) {
 void DisplayQt::about() {
 
   const std::string info_text =
-      "<b>Current Version:</b> " + std::to_string(Globals::VERSION);
+      "<b>Current Version:</b> " + Globals::getInstance().getVersion();
   QMessageBox::about(this, tr("About Finder"), tr(info_text.c_str()));
 }
 
@@ -284,12 +284,14 @@ void DisplayQt::createActions() {
                          QKeySequence::Find,
                          &DisplayQt::open);
 
+  /*
   const auto visualizePath = (path / "visualize.png").string();
   visualizeAct = createAction(visualizePath.c_str(),
                               tr("&Visualize Dictionary..."),
                               tr("Visualize the Indexing strategy."),
                               QKeySequence::Print,
                               &DisplayQt::visualize);
+  */
 
 
   const auto exitPathPathPathPath = (path / "exit.png").string();
@@ -313,7 +315,7 @@ void DisplayQt::createMenus() {
   menuBar()->addSeparator();
 
   editMenu = menuBar()->addMenu(tr("&Edit"));
-  editMenu->addAction(visualizeAct);
+  // editMenu->addAction(visualizeAct);
 
   menuBar()->addSeparator();
 
@@ -327,7 +329,7 @@ void DisplayQt::createToolBars() {
   fileToolBar->setIconSize(QSize(BASE_ICON_SIZE, BASE_ICON_SIZE));
 
   editToolBar = addToolBar(tr("Edit"));
-  editToolBar->addAction(visualizeAct);
+  // editToolBar->addAction(visualizeAct);
   // scale chooser
   QComboBox *scaleChooser = new QComboBox(this);
   scaleChooser->addItems(getAvailableZoomLevels());

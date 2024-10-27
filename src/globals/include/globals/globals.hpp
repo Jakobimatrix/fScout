@@ -90,6 +90,10 @@ class Globals {
       files.push_back(entry);
   }
 
+  std::string getVersion() const {
+    return std::to_string(Globals::VERSION) + " - " + VERSION_NAME;
+  }
+
   static constexpr uint32_t VERSION = 1;
 
  private:
