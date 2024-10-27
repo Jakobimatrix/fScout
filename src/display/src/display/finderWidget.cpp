@@ -29,8 +29,8 @@ FinderWidget::FinderWidget(QWidget *mommy)
 }
 
 QGroupBox *FinderWidget::create_info() {
-  QGroupBox *infoGroup = new QGroupBox("Indexing Information");
-  QFormLayout *formLayout = new QFormLayout;
+  QGroupBox *infoGroup = new QGroupBox("Indexing Information", this);
+  QFormLayout *formLayout = new QFormLayout(this);
 
   formLayout->addRow(new QLabel("Root Path:"), rootPathLabel);
   formLayout->addRow(new QLabel("Files Found:"), filesFoundLabel);
