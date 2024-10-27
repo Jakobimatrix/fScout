@@ -57,6 +57,7 @@ QGroupBox *FinderWidget::create_controlls() {
       new QCheckBox("Use Substrings of the search needle");
   QSpinBox *subsearchLengthInput = new QSpinBox;
   subsearchLengthInput->setMinimum(2);
+  subsearchLengthInput->setMaximum(20);
   subsearchLengthInput->setValue(displayQt->getMinSubsearchSize());
 
   exactSearchBox->setChecked(displayQt->usesExactPattern());
@@ -115,7 +116,12 @@ QGroupBox *FinderWidget::create_controlls() {
   QCheckBox *searchHidden = new QCheckBox("Search hidden Objects");
   QCheckBox *searchFolders = new QCheckBox("Search Folder Names");
   QCheckBox *searchFiles = new QCheckBox("Search File Names");
-  QCheckBox *howToOpenResults = new QCheckBox("Open Folder beneath Result");
+  QLabel *doubleClickDuration = new QLabel("Double Click Duration in MS");
+  QSpinBox *doubleClickDurationInput = new QSpinBox;
+  doubleClickDurationInput->setMinimum(200);
+  doubleClickDurationInput->setMaximum(1000);
+  doubleClickDurationInput->setValue(displayQt->getDoubleClickInterval());
+
 
   searchHidden->setChecked(displayQt->searchHiddenObjects());
   searchFolders->setChecked(displayQt->isSetSearchFolderNames());
@@ -130,10 +136,17 @@ QGroupBox *FinderWidget::create_controlls() {
   connect(searchFiles, &QCheckBox::stateChanged, displayQt, [this](int state) {
     displayQt->setSearchForFileNames(state == Qt::Checked);
   });
+  connect(doubleClickDurationInput,
+          QOverload<int>::of(&QSpinBox::valueChanged),
+          displayQt,
+          [this](int value) { displayQt->setDoubleClickInterval(value); });
 
   grid->addWidget(searchHidden, 5, 0);
   grid->addWidget(searchFolders, 6, 0);
   grid->addWidget(searchFiles, 7, 0);
+  grid->addWidget(doubleClickDuration, 8, 0);
+  grid->addWidget(doubleClickDurationInput, 8, 1);
+
 
   controlsGroup->setLayout(grid);
   return controlsGroup;

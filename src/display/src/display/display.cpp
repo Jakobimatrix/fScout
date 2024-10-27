@@ -9,6 +9,7 @@ Display::Display()
   put<int, 4>(disp_pos_size[0], DISP_POS_SIZE, true);
   put<std::string>(split_widget_state, SPLIT_WIDGET_STATE, true);
   put<int>(disp_scale, DISP_SCALE, true);
+  put<int>(doubleClickInterval_ms, DOUBLE_CLICK_INTERVAL, true);
 }
 
 Display::~Display() {

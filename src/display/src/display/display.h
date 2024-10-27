@@ -59,6 +59,11 @@ class Display : public DisplaySettings {
     finder.setSearchHiddenObjects(searchHidden);
   }
   // </SEARCH>
+  int getDoubleClickInterval() const { return doubleClickInterval_ms; }
+
+  void setDoubleClickInterval(int interval_ms) {
+    doubleClickInterval_ms = interval_ms;
+  }
 
 
  protected:
@@ -207,4 +212,6 @@ class Display : public DisplaySettings {
   const std::string SPLIT_WIDGET_STATE = "SplitWidgetState";
   int disp_scale = 100;
   const std::string DISP_SCALE = "DisplayScale";
+  int doubleClickInterval_ms = 250;
+  const std::string DOUBLE_CLICK_INTERVAL = "DoubleClickInterval";
 };

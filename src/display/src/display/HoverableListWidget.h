@@ -1,12 +1,13 @@
 #pragma once
 
-#include <QElapsedTimer>
 #include <QListWidget>
 #include <QObject>
 #include <QPainter>
 #include <QStyledItemDelegate>
 #include <QTextDocument>
+#include <QTimer>
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <vector>
 
@@ -58,6 +59,8 @@ class HoverableListWidget : public QListWidget {
   Q_OBJECT
 
  public:
+  using GetDoubleClickInterval = std::function<int()>;
+
   HoverableListWidget(QWidget *parent = nullptr);
   void addSearchResultItem(const std::filesystem::path &searchResult,
                            const std::string &search);
@@ -65,7 +68,14 @@ class HoverableListWidget : public QListWidget {
 
   void clear();
 
- protected:
+  void setDoubleClickIntervalFunction(const GetDoubleClickInterval &func) {
+    getDoubleClickInterval = func;
+  }
+
+
+
+ private:
+  GetDoubleClickInterval getDoubleClickInterval = []() { return 255; };
   void mouseMoveEvent(QMouseEvent *event) override;
   void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
@@ -74,8 +84,8 @@ class HoverableListWidget : public QListWidget {
 
   int getWordWidth(const QString &word) const;
 
-  QElapsedTimer clickTimer;  // Timer for distinguishing clicks
-  const int DOUBLE_CLICK_INTERVAL = 250;
+  QTimer clickTimer;
+  QListWidgetItem *pendingItem = nullptr;
 
   struct ItemInfo {
     QString leftPathPart;

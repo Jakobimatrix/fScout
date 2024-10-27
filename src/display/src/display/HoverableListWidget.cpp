@@ -9,64 +9,51 @@
 #include <QResizeEvent>
 #include <QToolTip>
 #include <QUrl>
-#include <globals/macros.hpp>
 #include <utils/filesystem/filesystem.hpp>
-
-
 
 HoverableListWidget::HoverableListWidget(QWidget *parent)
     : QListWidget(parent) {
   setMouseTracking(true);
 
-  // double click opens item
-  connect(this, &QListWidget::itemDoubleClicked, [this](QListWidgetItem *item) {
-    clickTimer.invalidate();
-    DEBUG("double click");
-    QString filePath = item->toolTip();  // Retrieve the full path from the tooltip
-    QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
-  });
+  clickTimer.setSingleShot(true);
 
-  // single click opens folder beneath
-  connect(this, &QListWidget::itemClicked, [this](QListWidgetItem *item) {
-    if (clickTimer.isValid()) {
+  // Handle single-click logic when the timer times out
+  connect(&clickTimer, &QTimer::timeout, this, [this]() {
+    // save the pointer for edgecase that secons dingle click and time out occure parallel
+    QListWidgetItem *item = pendingItem;
+    pendingItem = nullptr;
+    clickTimer.stop();
+    if (item == nullptr) {
       return;
     }
-    clickTimer.start();  // Start timer for single click
-    DEBUG("single click");
-    // pause thread for DOUBLE_CLICK_INTERVAL
 
-    while (clickTimer.isValid() && clickTimer.elapsed() < DOUBLE_CLICK_INTERVAL) {
-    }
-    DEBUG("single click timeout");
-    if (!clickTimer.isValid()) {
-      return;  // we had a double click
-    }
-    clickTimer.invalidate();
-    DEBUG("single click valide");
+    QString filePath = item->toolTip();  // Retrieve the full path from the tooltip
+    QFileInfo fileInfo(filePath);
 
-    // Emit single click logic
-    if (item) {
-      QString filePath = item->toolTip();  // Retrieve the full path from the tooltip
-      QFileInfo fileInfo(filePath);
+    if (!fileInfo.exists()) {
+      QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
+    } else {
+      QString folderPath = fileInfo.absolutePath();
 
-      if (fileInfo.exists()) {
-        QString folderPath = fileInfo.absolutePath();
-
-        // For Windows, open folder and highlight file
 #ifdef Q_OS_WIN
-        /* QString command =
-           QString("explorer.exe /select,%1").arg(QDir::toNativeSeparators(filePath));*/
-        QProcess::startDetached(
-            "explorer.exe", {"/select,", QDir::toNativeSeparators(filePath)});
+      QProcess::startDetached("explorer.exe",
+                              {"/select,", QDir::toNativeSeparators(filePath)});
 #else
-        // On other platforms, just open the folder
-        QDesktopServices::openUrl(QUrl::fromLocalFile(folderPath));
+          QDesktopServices::openUrl(QUrl::fromLocalFile(folderPath));
 #endif
-      } else {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
-      }
-      emit itemClicked(item);
     }
+  });
+
+  // Single-click detection (also triggers twice on double click, so use timer to distinguish)
+  connect(this, &QListWidget::itemClicked, [this](QListWidgetItem *item) {
+    if (pendingItem != nullptr) {
+      pendingItem = nullptr;
+      // Double-click action logic
+      QDesktopServices::openUrl(QUrl::fromLocalFile(item->toolTip()));
+      return;
+    }
+    pendingItem = item;  // Store item for use in single-click action
+    clickTimer.start(getDoubleClickInterval());
   });
 }
 
@@ -99,7 +86,9 @@ int HoverableListWidget::getWordWidth(const QString &word) const {
 QString HoverableListWidget::shortenPathWithEllipsis(const QString &leftPathPart,
                                                      const QString &rightPathPart) const {
   QFontMetrics metrics(font());
-  const int availableWidth = viewport()->width() - 20 - metrics.width(rightPathPart);  // Consider some padding
+  constexpr int MAGIC_PADDING = 23;
+  const int availableWidth =
+      viewport()->width() - MAGIC_PADDING - metrics.width(rightPathPart);
 
   return metrics.elidedText(leftPathPart, Qt::ElideMiddle, availableWidth);
 }

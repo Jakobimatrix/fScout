@@ -54,6 +54,8 @@ QGroupBox *FinderOutputWidget::create_resultField() {
   resultList = new HoverableListWidget(this);
   resultList->setToolTipDuration(10000);
   resultList->setItemDelegate(new RichTextDelegate(resultList));
+  resultList->setDoubleClickIntervalFunction(
+      std::bind(&Display::getDoubleClickInterval, displayQt));
 
   vbox->addWidget(resultList);
   resultGroup->setLayout(vbox);
