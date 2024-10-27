@@ -1,8 +1,8 @@
 #pragma once
 #include <algorithm>
+#include <array>
 #include <string>
 #include <vector>
-#include <array>
 
 namespace pattern {
 #ifdef _WIN32
@@ -75,6 +75,10 @@ class SubsetPattern : public SearchPattern {
 
   std::vector<std::string> generateNeedles(const std::string& needle) const override {
     std::vector<std::string> subsets;
+
+    if (min_subsize > needle.size()) {
+      return subsets;
+    }
 
     // Loop through the needle to generate all possible subsets of size >= min_subsize
     for (std::size_t start = 0; start < needle.size() - min_subsize; ++start) {

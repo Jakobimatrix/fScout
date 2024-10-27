@@ -20,7 +20,7 @@ DisplayQt::DisplayQt() : Display() {
   setCentralWidget(splitter);
 
   // Create a main layout to stack the top widget and the splitter
-  QVBoxLayout *mainLayout = new QVBoxLayout(this);
+  QVBoxLayout *mainLayout = new QVBoxLayout();
   mainLayout->addWidget(splitter);
 
   // Set main layout to a central widget

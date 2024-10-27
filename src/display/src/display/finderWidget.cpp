@@ -24,7 +24,6 @@ FinderWidget::FinderWidget(QWidget *mommy)
 
   // Create Controls section
   layout->addWidget(create_controlls());
-
   setLayout(layout);
 }
 
@@ -141,7 +140,6 @@ QGroupBox *FinderWidget::create_controlls() {
   grid->addWidget(searchFiles, row++, 0);
   grid->addWidget(doubleClickDuration, row, 0);
   grid->addWidget(doubleClickDurationInput, row++, 1);
-
 
   controlsGroup->setLayout(grid);
   return controlsGroup;

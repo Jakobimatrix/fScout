@@ -25,7 +25,7 @@
 
 FinderOutputWidget::FinderOutputWidget(QWidget *parent)
     : QWidget(parent), displayQt(reinterpret_cast<DisplayQt *>(parent)) {
-  QVBoxLayout *layout = new QVBoxLayout(this);
+  QVBoxLayout *layout = new QVBoxLayout();
 
   layout->addWidget(create_search());
   layout->addWidget(create_resultField());
@@ -42,7 +42,6 @@ QGroupBox *FinderOutputWidget::create_search() {
     displayQt->search(text.toStdString());
   });
   vbox->addWidget(searchField);
-
   searchGroup->setLayout(vbox);
   return searchGroup;
 }
