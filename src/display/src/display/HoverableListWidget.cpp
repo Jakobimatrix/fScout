@@ -129,10 +129,29 @@ void HoverableListWidget::addSearchResultItem(const std::filesystem::path &searc
   QListWidgetItem *item = new QListWidgetItem(fullPathStr);
   item->setToolTip(searchResult.string().c_str());
   item->setFlags(item->flags() | Qt::ItemIsSelectable);
+  QFont font = this->font();
+  item->setFont(font);  // set font to listen to scale change
   addItem(item);
 }
 
 void HoverableListWidget::clear() {
   entries.clear();
   QListWidget::clear();
+}
+
+void HoverableListWidget::changeScale(const double scale_factor) {
+  return;
+  /*
+  QFont font = this->font();
+  font.setPointSizeF(font.pointSizeF() * scale_factor);
+
+  // Update each item
+  for (int i = 0; i < count(); ++i) {
+    QListWidgetItem *item = this->item(i);
+    item->setFont(font);  // Apply new font size to item
+  }
+
+  // Optionally, repaint to ensure the layout updates immediately
+  update();
+*/
 }

@@ -32,6 +32,10 @@ class RichTextDelegate : public QStyledItemDelegate {
       QTextDocument doc;
       doc.setHtml(text);
 
+      // use the font from parent
+      QFont scaledFont = option.font;
+      doc.setDefaultFont(scaledFont);
+
       // Set document width to the available item width
       doc.setTextWidth(option.rect.width());
 
@@ -72,7 +76,7 @@ class HoverableListWidget : public QListWidget {
     getDoubleClickInterval = func;
   }
 
-
+  void changeScale(const double scale_factor);
 
  private:
   GetDoubleClickInterval getDoubleClickInterval = []() { return 255; };

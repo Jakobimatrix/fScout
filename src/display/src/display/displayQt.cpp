@@ -90,6 +90,7 @@ void DisplayQt::changeScale(const int scale, const bool is_scale_on_load) {
     finder_widget->resize(finder_widget->size() * scale_fraction);
     finder_output_widget->resize(finder_output_widget->size() * scale_fraction);
   }
+  finder_output_widget->changeScale(fontScale);
 }
 
 const QStringList DisplayQt::getAvailableZoomLevels() {

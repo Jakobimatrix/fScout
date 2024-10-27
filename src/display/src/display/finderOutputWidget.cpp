@@ -25,7 +25,7 @@
 
 FinderOutputWidget::FinderOutputWidget(QWidget *parent)
     : QWidget(parent), displayQt(reinterpret_cast<DisplayQt *>(parent)) {
-  QVBoxLayout *layout = new QVBoxLayout;
+  QVBoxLayout *layout = new QVBoxLayout(this);
 
   layout->addWidget(create_search());
   layout->addWidget(create_resultField());
@@ -35,9 +35,9 @@ FinderOutputWidget::FinderOutputWidget(QWidget *parent)
 
 QGroupBox *FinderOutputWidget::create_search() {
   QGroupBox *searchGroup = new QGroupBox("Search Files");
-  QVBoxLayout *vbox = new QVBoxLayout;
+  QVBoxLayout *vbox = new QVBoxLayout(this);
 
-  QLineEdit *searchField = new QLineEdit;
+  QLineEdit *searchField = new QLineEdit(this);
   connect(searchField, &QLineEdit::textChanged, [this](const QString &text) {
     displayQt->search(text.toStdString());
   });
@@ -50,7 +50,7 @@ QGroupBox *FinderOutputWidget::create_search() {
 QGroupBox *FinderOutputWidget::create_resultField() {
   QGroupBox *resultGroup = new QGroupBox("Search Results");
 
-  QVBoxLayout *vbox = new QVBoxLayout;
+  QVBoxLayout *vbox = new QVBoxLayout(this);
   resultList = new HoverableListWidget(this);
   resultList->setToolTipDuration(10000);
   resultList->setItemDelegate(new RichTextDelegate(resultList));
@@ -86,3 +86,7 @@ void FinderOutputWidget::setSearchResults(const std::vector<std::filesystem::pat
 }
 
 void FinderOutputWidget::reset() { resultList->clear(); }
+
+void FinderOutputWidget::changeScale(const double scaleFactor) {
+  resultList->changeScale(scaleFactor);
+}
