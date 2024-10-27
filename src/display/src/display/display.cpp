@@ -9,7 +9,6 @@ Display::Display()
   put<int, 4>(disp_pos_size[0], DISP_POS_SIZE, true);
   put<std::string>(split_widget_state, SPLIT_WIDGET_STATE, true);
   put<int>(disp_scale, DISP_SCALE, true);
-  put<bool>(prefere_open_folder_beneath, PREFERE_OPEN_FOLDER_BENEATH, true);
 }
 
 Display::~Display() {

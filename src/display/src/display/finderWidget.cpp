@@ -120,7 +120,6 @@ QGroupBox *FinderWidget::create_controlls() {
   searchHidden->setChecked(displayQt->searchHiddenObjects());
   searchFolders->setChecked(displayQt->isSetSearchFolderNames());
   searchFiles->setChecked(displayQt->isSetSearchFileNames());
-  howToOpenResults->setChecked(displayQt->openFolderBeneath());
 
   connect(searchHidden, &QCheckBox::stateChanged, displayQt, [this](int state) {
     displayQt->setSearchHiddenObjects(state == Qt::Checked);
@@ -131,14 +130,10 @@ QGroupBox *FinderWidget::create_controlls() {
   connect(searchFiles, &QCheckBox::stateChanged, displayQt, [this](int state) {
     displayQt->setSearchForFileNames(state == Qt::Checked);
   });
-  connect(howToOpenResults, &QCheckBox::stateChanged, displayQt, [this](int state) {
-    displayQt->setOpenFolderBeneath(state == Qt::Checked);
-  });
 
   grid->addWidget(searchHidden, 5, 0);
   grid->addWidget(searchFolders, 6, 0);
   grid->addWidget(searchFiles, 7, 0);
-  grid->addWidget(howToOpenResults, 8, 0);
 
   controlsGroup->setLayout(grid);
   return controlsGroup;

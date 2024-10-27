@@ -54,13 +54,9 @@ class Display : public DisplaySettings {
   bool isSetSearchFolderNames() const {
     return finder.isSetSearchFolderNames();
   }
-  bool openFolderBeneath() const { return prefere_open_folder_beneath; }
   bool searchHiddenObjects() const { return finder.isSetSearchHiddenObjects(); }
   void setSearchHiddenObjects(const bool searchHidden) {
     finder.setSearchHiddenObjects(searchHidden);
-  }
-  void setOpenFolderBeneath(const bool open_folder_beneath) {
-    prefere_open_folder_beneath = open_folder_beneath;
   }
   // </SEARCH>
 
@@ -211,6 +207,4 @@ class Display : public DisplaySettings {
   const std::string SPLIT_WIDGET_STATE = "SplitWidgetState";
   int disp_scale = 100;
   const std::string DISP_SCALE = "DisplayScale";
-  bool prefere_open_folder_beneath = false;
-  const std::string PREFERE_OPEN_FOLDER_BENEATH = "OpenFolderBeneath";
 };
