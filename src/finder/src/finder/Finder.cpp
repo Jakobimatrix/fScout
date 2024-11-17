@@ -123,7 +123,7 @@ size_t Finder::getNumEntries() const { return numEntries; }
 
 void Finder::stopCurrentWorker() {
   if (workerThread && workerThread->joinable()) {
-    stopWorking = true;
+    stopWorking.store(true);
     workerThread->join();
     workerThread.reset();
   }
@@ -297,11 +297,11 @@ void Finder::search(const std::string needle /*intentional copy*/,
 
     std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults;
     for (size_t i = 0; i < activeSearchPatterns.size(); ++i) {
-      if (stopWorking) {
+      if (stopWorking.load()) {
         break;
       }
       std::multimap<int, std::filesystem::path, std::greater<int>> newResults =
-          dictionary->search(needle, activeSearchPatterns[i]);
+          dictionary->search(needle, activeSearchPatterns[i], stopWorking);
       scoredResults.insert(newResults.begin(), newResults.end());
 
       std::vector<std::filesystem::path> results;

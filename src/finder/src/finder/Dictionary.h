@@ -16,7 +16,9 @@ class Dictionary {
 
 
   std::multimap<int, std::filesystem::path, std::greater<int>> search(
-      const std::string &needle, const std::shared_ptr<SearchPattern> &pattern) const;
+      const std::string &needle,
+      const std::shared_ptr<SearchPattern> &pattern,
+      std::atomic<bool> &stopSearch) const;
 
   void serialize(const std::string &filename,
                  const std::chrono::steady_clock::time_point &timeOfIndexing) const;

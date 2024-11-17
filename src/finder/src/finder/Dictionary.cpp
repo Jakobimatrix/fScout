@@ -1,5 +1,6 @@
 #include <finder/Dictionary.h>
 
+#include <atomic>
 #include <fstream>
 #include <globals/globals.hpp>
 #include <iostream>
@@ -27,7 +28,9 @@ void Dictionary::addPath(const std::filesystem::path& path) {
 
 
 std::multimap<int, std::filesystem::path, std::greater<int>> Dictionary::search(
-    const std::string& needle_in, const std::shared_ptr<SearchPattern>& pattern) const {
+    const std::string& needle_in,
+    const std::shared_ptr<SearchPattern>& pattern,
+    std::atomic<bool>& stopSearch) const {
 
   // to save storage and computation time, we save everything lower case.
   // The scoring function at the end will score exact matches better than case insensitive matches.
@@ -37,11 +40,17 @@ std::multimap<int, std::filesystem::path, std::greater<int>> Dictionary::search(
   std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults;
 
   for (const auto& newNeedle : allNeedles) {
+    if (stopSearch.load()) {
+      return scoredResults;
+    }
     if (min_search_size > newNeedle.size()) {
       continue;
     }
     auto matches = tree->search(newNeedle);
     for (const auto& match : matches) {
+      if (stopSearch.load()) {
+        return scoredResults;
+      }
       scoredResults.emplace(scoreMatch(needle_in, util::getLastPathComponent(match)), match);
     }
   }
