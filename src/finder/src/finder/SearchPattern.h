@@ -29,6 +29,7 @@ constexpr std::array<char, 95> allowedFileNameChars = {{
   '!', '#', '$', '%', '&', '\'', '(', ')', '-', '@', '^', '_', '`', '{', '}', '~', '+', '=', '.', ',', ';', ']', '[', ' ', '\\', '*', '?', ':', '|', '\"', '<', '>', '\''
 }};
 #endif
+constexpr size_t ALLOWED_CHARACTERS_SMALL_LETTERS_START_INDEX = 26;
 } // namespace pattern
 // clang-format on
 
@@ -55,9 +56,11 @@ class FuzzyMatchPattern : public SearchPattern {
     std::vector<std::string> needles;
     for (size_t i = 0; i < needle.length(); ++i) {
       std::string modified = needle;
-      for (char c = 'a'; c <= 'z'; ++c) {
-        if (c != needle[i]) {
-          modified[i] = c;
+      for (size_t j = pattern::ALLOWED_CHARACTERS_SMALL_LETTERS_START_INDEX;
+           j < pattern::allowedFileNameChars.size();
+           ++j) {
+        if (pattern::allowedFileNameChars[j] != needle[i]) {
+          modified[i] = pattern::allowedFileNameChars[j];
           needles.push_back(modified);
         }
       }
@@ -89,39 +92,5 @@ class SubsetPattern : public SearchPattern {
     }
 
     return subsets;
-  }
-};
-
-class WildcardPattern : public SearchPattern {
-  char _wildcard;
-
- public:
-  explicit WildcardPattern(char wildcard) : _wildcard(wildcard) {}
-
-  std::vector<std::string> generateNeedles(const std::string& needle) const override {
-    std::vector<std::string> subsets;
-    generateNeedlesRecursively(needle, 0, subsets);
-    return subsets;
-  }
-
- private:
-  void generateNeedlesRecursively(const std::string& needle,
-                                  size_t index,
-                                  std::vector<std::string>& subsets) const {
-    // Find the next occurrence of the wildcard
-    size_t wildcardPos = needle.find(_wildcard, index);
-
-    // If there are no more wildcards, add the current needle to subsets
-    if (wildcardPos == std::string::npos) {
-      subsets.push_back(needle);
-      return;
-    }
-
-    // For each allowed character, replace the wildcard and recurse
-    for (char allowedChar : pattern::allowedFileNameChars) {
-      std::string modifiedNeedle = needle;
-      modifiedNeedle[wildcardPos] = allowedChar;  // Replace the wildcard
-      generateNeedlesRecursively(modifiedNeedle, wildcardPos + 1, subsets);  // Recurse with the next position
-    }
   }
 };

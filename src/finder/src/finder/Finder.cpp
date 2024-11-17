@@ -181,6 +181,7 @@ void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
   // Reset state for new indexing
   fullyIndexed = false;
   dictionary = std::make_unique<Dictionary>();
+  dictionary->setWildCard(wildcard, useWildcardPattern);
 
   workerThread = std::make_unique<std::thread>([this, callback]() {
 
@@ -292,40 +293,52 @@ void Finder::search(const std::string needle /*intentional copy*/,
                     const CallbackSearchResult& callback) {
   stopCurrentWorker();
   workerThread = std::make_unique<std::thread>([this, callback, needle]() {
-    std::vector<std::filesystem::path> results =
-        dictionary->search(needle, getActiveSearchPatterns());
-    if (!searchForFileNames) {  // TODO this is very inefficient, maxbe 2 different trees?
-      results.erase(std::remove_if(results.begin(),
-                                   results.end(),
-                                   [](const std::filesystem::path& p) {
-                                     return std::filesystem::is_regular_file(p);
-                                   }),
-                    results.end());
-    }
+    const auto activeSearchPatterns = getActiveSearchPatterns();
 
-    if (!searchForFolderNames) {
-      results.erase(std::remove_if(results.begin(),
-                                   results.end(),
-                                   [](const std::filesystem::path& p) {
-                                     return std::filesystem::is_directory(p);
-                                   }),
-                    results.end());
+    std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults;
+    for (size_t i = 0; i < activeSearchPatterns.size(); ++i) {
+      if (stopWorking) {
+        break;
+      }
+      std::multimap<int, std::filesystem::path, std::greater<int>> newResults =
+          dictionary->search(needle, activeSearchPatterns[i]);
+      scoredResults.insert(newResults.begin(), newResults.end());
+
+      std::vector<std::filesystem::path> results;
+      const int maxScore = scoredResults.begin()->first;
+      const int threshold = maxScore - needle.size();
+      std::set<std::filesystem::path> seenPaths;
+      for (auto it = scoredResults.begin(); it != scoredResults.end(); ++it) {
+        const auto& [score, path] = *it;
+        if (score < threshold) {
+          scoredResults.erase(it, scoredResults.end());
+          break;
+        }
+        if (!searchForFolderNames && std::filesystem::is_directory(path)) {
+          continue;
+        }
+        if (!searchForFileNames && std::filesystem::is_regular_file(path)) {
+          continue;
+        }
+        // If the path has not been added yet, insert it into the result
+        if (seenPaths.insert(path).second) {
+          results.push_back(path);
+        }
+      }
+      const bool finnishedSearch = i >= activeSearchPatterns.size() - 1;
+      callback(finnishedSearch, results, needle);
     }
-    callback(true, results, needle);
   });
 }
 
-std::vector<std::unique_ptr<SearchPattern>> Finder::getActiveSearchPatterns() const {
-  std::vector<std::unique_ptr<SearchPattern>> patterns;
-  patterns.emplace_back(std::make_unique<ExactMatchPattern>());
+std::vector<std::shared_ptr<SearchPattern>> Finder::getActiveSearchPatterns() const {
+  std::vector<std::shared_ptr<SearchPattern>> patterns;
+  patterns.emplace_back(std::make_shared<ExactMatchPattern>(ExactMatchPattern()));
   if (useFuzzyMatchPattern) {
-    patterns.emplace_back(std::make_unique<FuzzyMatchPattern>());
-  }
-  if (useWildcardPattern) {
-    patterns.emplace_back(std::make_unique<WildcardPattern>(wildcard));
+    patterns.emplace_back(std::make_shared<FuzzyMatchPattern>(FuzzyMatchPattern()));
   }
   if (useSubsetPattern) {
-    patterns.emplace_back(std::make_unique<SubsetPattern>(minSubPatternSize));
+    patterns.emplace_back(std::make_shared<SubsetPattern>(SubsetPattern(minSubPatternSize)));
   }
   return patterns;
 }
@@ -347,3 +360,43 @@ std::string Finder::getIndexingDate() const {
 
   return oss.str();
 }
+
+bool Finder::usesFuzzyMatchPattern() const { return useFuzzyMatchPattern; }
+bool Finder::usesWildcardPattern() const { return useWildcardPattern; }
+char Finder::getWindcard() const { return wildcard; }
+bool Finder::usesSubsetPattern() const { return useSubsetPattern; }
+size_t Finder::getMinSubPatternSearchSize() const { return minSubPatternSize; }
+
+
+void Finder::setUseFuzzyMatchPattern(const bool use) {
+  useFuzzyMatchPattern = use;
+}
+void Finder::setUseWildcardPattern(const bool use) {
+  useWildcardPattern = use;
+  if (dictionary != nullptr) {
+    dictionary->setWildCard(wildcard, useWildcardPattern);
+  }
+}
+void Finder::setWildcard(const char wildcardChar) {
+  wildcard = wildcardChar;
+  if (dictionary != nullptr) {
+    dictionary->setWildCard(wildcard, useWildcardPattern);
+  }
+}
+void Finder::setUseSubsetPattern(const bool use) { useSubsetPattern = use; }
+void Finder::setMinSubPatternSize(const size_t size) {
+  minSubPatternSize = size;
+}
+
+void Finder::setSearchForFileNames(const bool searchFileNames) {
+  searchForFileNames = searchFileNames;
+}
+void Finder::setSearchForFolderNames(const bool searchFolderNames) {
+  searchForFolderNames = searchFolderNames;
+}
+void Finder::setSearchHiddenObjects(const bool searchHidden) {
+  searchHiddenObjects = searchHidden;
+}
+bool Finder::isSetSearchFileNames() const { return searchForFileNames; }
+bool Finder::isSetSearchFolderNames() const { return searchForFolderNames; }
+bool Finder::isSetSearchHiddenObjects() const { return searchHiddenObjects; }

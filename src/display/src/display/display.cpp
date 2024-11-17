@@ -104,7 +104,10 @@ void Display::callbackSearch(bool finnished,
                              const std::string& search) {
   setSearchResults(results, search);
   if (finnished) {
-    setStatus("Search finnished");
+    setStatus("Search finnished, found " + std::to_string(results.size()) +
+              " matches");
+  } else {
+    setStatus("searching ... " + std::to_string(results.size()));
   }
 }
 

@@ -26,20 +26,14 @@ void Dictionary::addPath(const std::filesystem::path& path) {
 }
 
 
-std::vector<std::filesystem::path> Dictionary::search(
-    const std::string& needle_in,
-    const std::vector<std::unique_ptr<SearchPattern>>& patterns) const {
-  std::vector<std::string> allNeedles;
+std::multimap<int, std::filesystem::path, std::greater<int>> Dictionary::search(
+    const std::string& needle_in, const std::shared_ptr<SearchPattern>& pattern) const {
+
   // to save storage and computation time, we save everything lower case.
   // The scoring function at the end will score exact matches better than case insensitive matches.
   std::string needle = needle_in;
   std::transform(needle.begin(), needle.end(), needle.begin(), ::tolower);
-  // Generate needles using each pattern
-  for (const auto& pattern : patterns) {
-    auto needles = pattern->generateNeedles(needle);
-    allNeedles.insert(allNeedles.end(), needles.begin(), needles.end());
-  }
-
+  const std::vector<std::string> allNeedles = pattern->generateNeedles(needle);
   std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults;
 
   for (const auto& newNeedle : allNeedles) {
@@ -51,16 +45,12 @@ std::vector<std::filesystem::path> Dictionary::search(
       scoredResults.emplace(scoreMatch(needle_in, util::getLastPathComponent(match)), match);
     }
   }
-  std::set<std::filesystem::path> seenPaths;
-  std::vector<std::filesystem::path> result;
-  for (const auto& [score, path] : scoredResults) {
-    // If the path has not been added yet, insert it into the result
-    if (seenPaths.insert(path).second) {
-      result.push_back(path);
-    }
-  }
 
-  return result;
+  return scoredResults;
+}
+
+void Dictionary::setWildCard(const char wildCard, bool useWildcard) {
+  tree->setWildCard(wildCard, useWildcard);
 }
 
 void Dictionary::serialize(const std::string& filename,

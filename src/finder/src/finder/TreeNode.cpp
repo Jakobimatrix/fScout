@@ -6,9 +6,11 @@
 
 void TreeNode::serialize(std::ofstream& outFile) const {
   // Serialize leaf status
-  outFile.write(reinterpret_cast<const char*>(&_isLeaf), sizeof(_isLeaf));
+  outFile.write(reinterpret_cast<const char*>(&_depth), sizeof(_depth));
+  bool is_leaf = isLeaf();
+  outFile.write(reinterpret_cast<const char*>(&is_leaf), sizeof(is_leaf));
 
-  if (_isLeaf) {
+  if (is_leaf) {
     // Serialize the size of the paths vector
     size_t pathsCount = paths.size();
     outFile.write(reinterpret_cast<const char*>(&pathsCount), sizeof(pathsCount));
@@ -38,12 +40,14 @@ void TreeNode::serialize(std::ofstream& outFile) const {
 }
 
 TreeNode* TreeNode::deserialize(std::ifstream& inFile) {
-  auto* node = new TreeNode();
+  auto* node = new TreeNode(0);
 
   // Read leaf status
-  inFile.read(reinterpret_cast<char*>(&node->_isLeaf), sizeof(node->_isLeaf));
+  inFile.read(reinterpret_cast<char*>(&node->_depth), sizeof(node->_depth));
+  bool is_leaf;
+  inFile.read(reinterpret_cast<char*>(&is_leaf), sizeof(is_leaf));
 
-  if (node->_isLeaf) {
+  if (is_leaf) {
     // Read the size of the paths vector
     size_t pathsCount;
     inFile.read(reinterpret_cast<char*>(&pathsCount), sizeof(pathsCount));
@@ -77,11 +81,13 @@ TreeNode* TreeNode::deserialize(std::ifstream& inFile) {
   return node;
 }
 
+bool TreeNode::isLeaf() const { return !paths.empty(); }
+
 
 void TreeNode::print(const TreeNode* node, const std::string& prefix, bool is_last) {
   std::string currentPrefix = prefix + (is_last ? "└" : "├");
 
-  if (node->_isLeaf) {
+  if (node->isLeaf()) {
     // Print the paths for leaf nodes
     for (size_t i = 0; i < node->paths.size(); ++i) {
       std::cout << currentPrefix << node->paths[i].filename().string() << " -> "

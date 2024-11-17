@@ -6,7 +6,7 @@
 #include <vector>
 
 struct TreeNode {
-  TreeNode() : _isLeaf(false) {}
+  TreeNode(size_t depth) : _depth(depth) {}
   TreeNode(const TreeNode&) = delete;
 
   ~TreeNode() {
@@ -16,9 +16,11 @@ struct TreeNode {
     }
   }
 
-  bool _isLeaf;
+  size_t _depth;
   std::unordered_map<char, TreeNode*> _children;
   std::vector<std::filesystem::path> paths;
+
+  bool isLeaf() const;
 
   void serialize(std::ofstream& outFile) const;
   static TreeNode* deserialize(std::ifstream& inFile);

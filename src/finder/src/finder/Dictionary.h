@@ -4,6 +4,7 @@
 #include <finder/Tree.h>
 
 #include <filesystem>
+#include <map>
 #include <string>
 
 class Dictionary {
@@ -14,9 +15,8 @@ class Dictionary {
   void addPath(const std::filesystem::path &);
 
 
-  std::vector<std::filesystem::path> search(
-      const std::string &needle,
-      const std::vector<std::unique_ptr<SearchPattern>> &patterns) const;
+  std::multimap<int, std::filesystem::path, std::greater<int>> search(
+      const std::string &needle, const std::shared_ptr<SearchPattern> &pattern) const;
 
   void serialize(const std::string &filename,
                  const std::chrono::steady_clock::time_point &timeOfIndexing) const;
@@ -28,7 +28,7 @@ class Dictionary {
 
   void visualize() const;
 
-
+  void setWildCard(const char wildCard, bool useWildcard);
 
   static int scoreChars(char a, char b);
   static int scoreMatch(const std::string &needle, const std::string &match);

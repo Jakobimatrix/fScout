@@ -41,31 +41,25 @@ class Finder : public FinderSettings {
   bool saveCurrentIndex(const std::filesystem::path &);
   bool loadIndexFromFile(const std::filesystem::path &);
 
-  bool usesFuzzyMatchPattern() const { return useFuzzyMatchPattern; }
-  bool usesWildcardPattern() const { return useWildcardPattern; }
-  char getWindcard() const { return wildcard; }
-  bool usesSubsetPattern() const { return useSubsetPattern; }
-  size_t getMinSubPatternSearchSize() const { return minSubPatternSize; }
+  bool usesFuzzyMatchPattern() const;
+  bool usesWildcardPattern() const;
+  char getWindcard() const;
+  bool usesSubsetPattern() const;
+  size_t getMinSubPatternSearchSize() const;
 
 
-  void setUseFuzzyMatchPattern(const bool use) { useFuzzyMatchPattern = use; }
-  void setUseWildcardPattern(const bool use) { useWildcardPattern = use; }
-  void setWildcard(const char wildcardChar) { wildcard = wildcardChar; }
-  void setUseSubsetPattern(const bool use) { useSubsetPattern = use; }
-  void setMinSubPatternSize(const size_t size) { minSubPatternSize = size; }
+  void setUseFuzzyMatchPattern(const bool use);
+  void setUseWildcardPattern(const bool use);
+  void setWildcard(const char wildcardChar);
+  void setUseSubsetPattern(const bool use);
+  void setMinSubPatternSize(const size_t size);
 
-  void setSearchForFileNames(const bool searchFileNames) {
-    searchForFileNames = searchFileNames;
-  }
-  void setSearchForFolderNames(const bool searchFolderNames) {
-    searchForFolderNames = searchFolderNames;
-  }
-  void setSearchHiddenObjects(const bool searchHidden) {
-    searchHiddenObjects = searchHidden;
-  }
-  bool isSetSearchFileNames() const { return searchForFileNames; }
-  bool isSetSearchFolderNames() const { return searchForFolderNames; }
-  bool isSetSearchHiddenObjects() const { return searchHiddenObjects; }
+  void setSearchForFileNames(const bool searchFileNames);
+  void setSearchForFolderNames(const bool searchFolderNames);
+  void setSearchHiddenObjects(const bool searchHidden);
+  bool isSetSearchFileNames() const;
+  bool isSetSearchFolderNames() const;
+  bool isSetSearchHiddenObjects() const;
 
 
   void search(const std::string needle, const CallbackSearchResult &);
@@ -78,7 +72,7 @@ class Finder : public FinderSettings {
   void setDefaultSearchExceptions();
   bool shouldIndexEntry(const std::filesystem::directory_entry &entry) const;
   void startIndexing(const CallbackFinnished &);
-  std::vector<std::unique_ptr<SearchPattern>> getActiveSearchPatterns() const;
+  std::vector<std::shared_ptr<SearchPattern>> getActiveSearchPatterns() const;
 
   // SETTINGS
   bool useFuzzyMatchPattern = true;
