@@ -45,43 +45,41 @@ QGroupBox *FinderWidget::create_controlls() {
   QGridLayout *grid = new QGridLayout;
 
   // Checkboxes for search patterns
-  QCheckBox *fuzzySearchBox = new QCheckBox("Fuzzy Search");
   QCheckBox *wildcardSearchBox = new QCheckBox("Wildcard (*) Search");
   QLineEdit *wildcardCharInput = new QLineEdit;
-  wildcardCharInput->setMaxLength(1);
+  wildcardCharInput->setMaxLength(2);
   wildcardCharInput->setText(QString(displayQt->getWildcardChar()));
 
-  QCheckBox *subsearchSearchBox =
-      new QCheckBox("Use Substrings of the search needle");
-  QSpinBox *subsearchLengthInput = new QSpinBox;
-  subsearchLengthInput->setMinimum(2);
-  subsearchLengthInput->setMaximum(20);
-  subsearchLengthInput->setValue(displayQt->getMinSubsearchSize());
+  QLabel *fuzzyTemperatureLabel = new QLabel("Fuzzy Search strength in %");
+  QSpinBox *fuzzyTemperatureInput = new QSpinBox;
+  fuzzyTemperatureInput->setMinimum(static_cast<int>(Finder::MIN_FUZZY_COEFF * 100.f));
+  fuzzyTemperatureInput->setMaximum(static_cast<int>(Finder::MAX_FUZZY_COEFF * 100.f));
+  fuzzyTemperatureInput->setValue(static_cast<int>(displayQt->getFuzzyCoeff() * 100.f));
 
-  fuzzySearchBox->setChecked(displayQt->usesFuzzyMatchPattern());
+
   wildcardSearchBox->setChecked(displayQt->usesWildcardPattern());
-  subsearchSearchBox->setChecked(displayQt->usesSubsearchPattern());
 
   // Connect signals to displayQt for search patterns
-  connect(fuzzySearchBox, &QCheckBox::stateChanged, displayQt, [this](int state) {
-    displayQt->setUseFuzzyMatchPattern(state == Qt::Checked);
-  });
   connect(wildcardSearchBox, &QCheckBox::stateChanged, displayQt, [this](int state) {
     displayQt->setUseWildcardPattern(state == Qt::Checked);
   });
-  connect(subsearchSearchBox, &QCheckBox::stateChanged, displayQt, [this](int state) {
-    displayQt->setUseSubsearchPattern(state == Qt::Checked);
-  });
+  connect(fuzzyTemperatureInput,
+          QOverload<int>::of(&QSpinBox::valueChanged),
+          displayQt,
+          [this](int value) {
+            displayQt->setFuzzyCoeff(static_cast<float>(value) / 100.f);
+          });
 
   connect(wildcardCharInput,
           &QLineEdit::textChanged,
           displayQt,
           [this, wildcardCharInput](const QString &text) {
             if (text.length() == 1) {
-              displayQt->setWildcardChar(text[0].toLatin1());
+              const std::wstring input = text.toStdWString();
+              displayQt->setWildcardChar(input[0]);
             } else if (text.length() == 2) {
-              const char current = displayQt->getWildcardChar();
-              const std::string input = text.toStdString();
+              const wchar_t current = displayQt->getWildcardChar();
+              const std::wstring input = text.toStdWString();
               if (input[0] == current) {
                 wildcardCharInput->setText(QString(input[1]));
                 displayQt->setWildcardChar(input[1]);
@@ -89,23 +87,16 @@ QGroupBox *FinderWidget::create_controlls() {
                 wildcardCharInput->setText(QString(input[0]));
                 displayQt->setWildcardChar(input[0]);
               }
-            } else {
-              wildcardCharInput->setText(QString(displayQt->getWildcardChar()));
             }
           });
 
-  connect(subsearchLengthInput,
-          QOverload<int>::of(&QSpinBox::valueChanged),
-          displayQt,
-          [this](int value) { displayQt->setMinSubsearchSize(value); });
 
   // Add widgets to the grid layout
   int row = 0;
-  grid->addWidget(fuzzySearchBox, row++, 0);
   grid->addWidget(wildcardSearchBox, row, 0);
   grid->addWidget(wildcardCharInput, row++, 1);
-  grid->addWidget(subsearchSearchBox, row, 0);
-  grid->addWidget(subsearchLengthInput, row++, 1);
+  grid->addWidget(fuzzyTemperatureLabel, row, 0);
+  grid->addWidget(fuzzyTemperatureInput, row++, 1);
 
   QCheckBox *searchHidden = new QCheckBox("Search hidden Objects");
   QCheckBox *searchFolders = new QCheckBox("Search Folder Names");
@@ -145,11 +136,11 @@ QGroupBox *FinderWidget::create_controlls() {
   return controlsGroup;
 }
 
-void FinderWidget::reset() { updateInfo("-", 0, "-"); }
+void FinderWidget::reset() { updateInfo(rootpath_default, 0, L"-"); }
 
-void FinderWidget::updateInfo(const std::string &root_path,
+void FinderWidget::updateInfo(const std::wstring &root_path,
                               const size_t num_files,
-                              const std::string &indexing_date) {
+                              const std::wstring &indexing_date) {
   // Ensure this runs in the main thread
   if (QThread::currentThread() != this->thread()) {
     // Make copies of the arguments and invoke method in the main thread
@@ -166,8 +157,7 @@ void FinderWidget::updateInfo(const std::string &root_path,
   }
 
   // Update UI labels in the main thread
-  rootPathLabel->setText(QString("Root Path: %1").arg(QString::fromStdString(root_path)));
-  filesFoundLabel->setText(
-      QString("Files Found: %1").arg(QString::fromStdString(std::to_string(num_files))));
-  indexingDate->setText(indexing_date.c_str());
+  rootPathLabel->setText(QString("Root Path: %1").arg(QString::fromStdWString(root_path)));
+  filesFoundLabel->setText(QString("Files Found: %1").arg(QString::number(num_files)));
+  indexingDate->setText(QString::fromStdWString(indexing_date));
 }

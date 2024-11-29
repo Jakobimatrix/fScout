@@ -67,7 +67,7 @@ HoverableListWidget::HoverableListWidget(QWidget *parent)
   connect(this, &QListWidget::itemDoubleClicked, [this](QListWidgetItem *item) {
     pendingItem = nullptr;
     QDesktopServices::openUrl(QUrl::fromLocalFile(item->toolTip()));
-});
+  });
 #endif
 }
 
@@ -110,7 +110,7 @@ QString HoverableListWidget::shortenPathWithEllipsis(const QString &leftPathPart
 
 
 void HoverableListWidget::addSearchResultItem(const std::filesystem::path &searchResult,
-                                              const std::string &search) {
+                                              const std::wstring &search) {
 
   static std::unordered_map<int, QString> scoreEmphasis = {
       {3, "color: green; font-weight: bold;"},    // Exact match
@@ -119,7 +119,7 @@ void HoverableListWidget::addSearchResultItem(const std::filesystem::path &searc
       {0, "color: black;"},                       // Total mismatch
   };
 
-  std::string match = util::getLastPathComponent(searchResult);
+  std::wstring match = util::getLastPathComponent(searchResult);
   std::vector<int> scores = Dictionary::getMatchScores(search, match);
 
   QString emphasizedMatch;
@@ -130,16 +130,16 @@ void HoverableListWidget::addSearchResultItem(const std::filesystem::path &searc
   }
 
   QString path =
-      QString::fromStdString(searchResult.parent_path().string()) + "/";
+      QString::fromStdWString(searchResult.parent_path().wstring()) + "/";
 
-  QString rightPathPart = QString::fromStdString(match);
+  QString rightPathPart = QString::fromStdWString(match);
   entries.emplace_back(ItemInfo{path, rightPathPart, emphasizedMatch});
 
   QString fullPathStr = shortenPathWithEllipsis(path, rightPathPart) + emphasizedMatch;
 
 
   QListWidgetItem *item = new QListWidgetItem(fullPathStr);
-  item->setToolTip(searchResult.string().c_str());
+  item->setToolTip(QString::fromStdWString(searchResult.wstring()));
   item->setFlags(item->flags() | Qt::ItemIsSelectable);
   QFont font = this->font();
   item->setFont(font);  // set font to listen to scale change
@@ -152,16 +152,16 @@ void HoverableListWidget::clear() {
 }
 
 void HoverableListWidget::changeScale(const double scale_factor) {
-    QFont font = this->font();
-    font.setPointSizeF(font.pointSizeF() * scale_factor);
-    setFont(font);  // Apply to all items
+  QFont font = this->font();
+  font.setPointSizeF(font.pointSizeF() * scale_factor);
+  setFont(font);  // Apply to all items
 
-    // Notify the delegate/view to update item sizes
-    updateGeometries();
-    for (int i = 0; i < count(); ++i) {
-        item(i)->setSizeHint(sizeHintForIndex(model()->index(i, 0)));
-    }
+  // Notify the delegate/view to update item sizes
+  updateGeometries();
+  for (int i = 0; i < count(); ++i) {
+    item(i)->setSizeHint(sizeHintForIndex(model()->index(i, 0)));
+  }
 
-    // Optionally, force a repaint to make sure changes appear immediately
-    viewport()->update();
+  // Optionally, force a repaint to make sure changes appear immediately
+  viewport()->update();
 }

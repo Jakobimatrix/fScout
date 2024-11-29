@@ -1,11 +1,13 @@
 #include <finder/Finder.h>
 
+#include <cmath>
 #include <filesystem>
 #include <functional>
 #include <globals/globals.hpp>
 #include <globals/macros.hpp>
 #include <globals/timer.hpp>
 #include <iostream>
+#include <sanitizers.hpp>
 #include <thread>
 #include <utils/filesystem/filesystem.hpp>
 
@@ -16,98 +18,96 @@
 Finder::Finder()
     : FinderSettings(Globals::getInstance().getPath2fScoutSettings()) {
   setDefaultSearchExceptions();
-  put<bool>(useFuzzyMatchPattern, USE_FUZZY_PATTERN, true);
   put<bool>(useWildcardPattern, USE_WILDCARD_PATTERN, true);
-  put<char>(wildcard, WILDCARD_PATTERN, true);
-  put<bool>(useSubsetPattern, USE_SubSet_PATTERN, true);
-  put<size_t>(minSubPatternSize, SUBSET_SIZE, true);
+  put<wchar_t>(wildcard, WILDCARD_PATTERN, true);
   put<bool>(searchForFolderNames, SEACH_FOLDERS, true);
   put<bool>(searchForFileNames, SEACH_FILES, true);
   put<bool>(searchHiddenObjects, SEACH_HIDDEN_OBJECTS, true);
-  put<std::set<std::string>>(exceptions, SEACH_EXEPTIONS, true);
+  put<float>(fuzzyCoefficient, FUZZY_SEARCH_COEFF, true, util::saneMinMax, MIN_FUZZY_COEFF, MAX_FUZZY_COEFF);
+  put<std::unordered_set<std::wstring>>(exceptions, SEACH_EXEPTIONS, true);
 }
 Finder::~Finder() { save(); }
 
 void Finder::setDefaultSearchExceptions() {
   // Version control directories (Git): Contains repo metadata and history, not useful for search
-  exceptions.insert(".git");
+  exceptions.insert(L".git");
 
   // Version control directories (Subversion): Similar to .git, holds metadata for SVN
-  exceptions.insert(".svn");
+  exceptions.insert(L".svn");
 
   // Version control directories (Mercurial): Another version control metadata directory
-  exceptions.insert(".hg");
+  exceptions.insert(L".hg");
 
   // macOS-specific metadata file: Stores custom folder view options and icon positions, not useful for search
-  exceptions.insert(".DS_Store");
+  exceptions.insert(L".DS_Store");
 
   // Linux/macOS trash folder: Contains deleted files, usually irrelevant for searching
-  exceptions.insert(".Trash");
+  exceptions.insert(L".Trash");
 
   // Common cache directory: Stores temporary files, caching data not relevant for search results
-  exceptions.insert(".cache");
+  exceptions.insert(L".cache");
 
 #ifdef _WIN32
   // Windows AppData: Contains user-specific settings, cache, and temporary files, typically irrelevant
-  exceptions.insert("AppData");
+  exceptions.insert(L"AppData");
 
   // Windows system files: Core OS files, users shouldn't search these for regular files
-  exceptions.insert("Program Files");
-  exceptions.insert("Program Files (x86)");
-  exceptions.insert("Windows");
+  exceptions.insert(L"Program Files");
+  exceptions.insert(L"Program Files (x86)");
+  exceptions.insert(L"Windows");
 
   // Windows recycle bin: Stores deleted files, irrelevant for searches
-  exceptions.insert("$Recycle.Bin");
+  exceptions.insert(L"$Recycle.Bin");
 
   // Windows paging file: A system file for virtual memory management
-  exceptions.insert("pagefile.sys");
+  exceptions.insert(L"pagefile.sys");
 
   // Windows hibernation file: Stores the system's state when hibernating
-  exceptions.insert("hiberfil.sys");
+  exceptions.insert(L"hiberfil.sys");
 
   // Windows system volume information: Contains restore points and other system-level data
-  exceptions.insert("System Volume Information");
+  exceptions.insert(L"System Volume Information");
 
   // Windows swap file: Temporary file used for system memory management
-  exceptions.insert("swapfile.sys");
+  exceptions.insert(L"swapfile.sys");
 
   // Windows old system data (post-upgrade): Contains previous versions of Windows, typically irrelevant
-  exceptions.insert("Windows.old");
+  exceptions.insert(L"Windows.old");
 
   // Windows temporary internet files: Stores cached files from web browsing, unnecessary for file searches
-  exceptions.insert("Temporary Internet Files");
+  exceptions.insert(L"Temporary Internet Files");
 
   // Windows local settings: Stores various temporary and cache files
-  exceptions.insert("Local Settings");
+  exceptions.insert(L"Local Settings");
 #else
   // Unix/Linux system directories: Core OS directories not relevant for file search
-  exceptions.insert("/bin");
-  exceptions.insert("/boot");
-  exceptions.insert("/dev");
-  exceptions.insert("/etc");
-  exceptions.insert("/lib");
-  exceptions.insert("/lib32");
-  exceptions.insert("/lib64");
-  exceptions.insert("/lost+found");
-  exceptions.insert("/media");
-  exceptions.insert("/mnt");
-  exceptions.insert("/proc");
-  exceptions.insert("/root");
-  exceptions.insert("/run");
-  exceptions.insert("/sbin");
-  exceptions.insert("/sys");
-  exceptions.insert("/tmp");
-  exceptions.insert("/usr");
-  exceptions.insert("/var");
+  exceptions.insert(L"/bin");
+  exceptions.insert(L"/boot");
+  exceptions.insert(L"/dev");
+  exceptions.insert(L"/etc");
+  exceptions.insert(L"/lib");
+  exceptions.insert(L"/lib32");
+  exceptions.insert(L"/lib64");
+  exceptions.insert(L"/lost+found");
+  exceptions.insert(L"/media");
+  exceptions.insert(L"/mnt");
+  exceptions.insert(L"/proc");
+  exceptions.insert(L"/root");
+  exceptions.insert(L"/run");
+  exceptions.insert(L"/sbin");
+  exceptions.insert(L"/sys");
+  exceptions.insert(L"/tmp");
+  exceptions.insert(L"/usr");
+  exceptions.insert(L"/var");
 
   // Linux/macOS local folder: Contains data used by programs
-  exceptions.insert(".local");
+  exceptions.insert(L".local");
 
   // Linux/macOS thumbnail cache: Stores image thumbnails for quick preview, not useful for file searches
-  exceptions.insert(".thumbnails");
+  exceptions.insert(L".thumbnails");
 
   // Installation Folder for windows executable under linux, not usefull for file search
-  exceptions.insert(".wine");
+  exceptions.insert(L".wine");
 #endif
 }
 
@@ -158,7 +158,8 @@ bool Finder::shouldIndexEntry(const std::filesystem::directory_entry& entry) con
 #endif
   // Check if we're on Unix (Linux/macOS) and if entry is a directory at the root level
   if (onUnix && root == std::filesystem::path("/") && entry.path().parent_path() == root) {
-    if (exceptions.find("/" + filename) != exceptions.end()) {
+    constexpr wchar_t SLASH{'/'};
+    if (exceptions.find(SLASH + filename) != exceptions.end()) {
       return false;
     }
   } else {
@@ -181,7 +182,6 @@ void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
   // Reset state for new indexing
   fullyIndexed = false;
   dictionary = std::make_unique<Dictionary>();
-  dictionary->setWildCard(wildcard, useWildcardPattern);
 
   workerThread = std::make_unique<std::thread>([this, callback]() {
 
@@ -210,7 +210,7 @@ void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
       try {
         for (const auto& entry : std::filesystem::directory_iterator(currentPath)) {
           if (stopWorking) {
-            callback(false, "Stopped by User.");
+            callback(false, L"Stopped by User.");
             return;
           }
 
@@ -218,17 +218,19 @@ void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
             continue;
           }
 
+          const bool isDirectory = std::filesystem::is_directory(entry.status());
+
           // dont folow symlinks/junctions, they could create a circle!
-          if (!isJunction(entry) && std::filesystem::is_directory(entry.status()) &&
+          if (!isJunction(entry) && isDirectory &&
               !std::filesystem::is_symlink(entry.status())) {
             directoriesToExplore.push_back(entry.path());
           }
-          dictionary->addPath(entry.path());
+          dictionary->addPath(entry.path(), isDirectory);
 
           ++numEntries;
           if (t.getPassedTime<std::chrono::milliseconds>() > updateTime) {
             t.start();
-            callback(true, std::to_string(numEntries) + " entries found");
+            callback(true, std::to_wstring(numEntries) + L" entries found");
           }
         }
       } catch (const std::filesystem::filesystem_error& e) {
@@ -240,9 +242,9 @@ void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
     fullyIndexed = true;
     indexingTime = std::chrono::steady_clock::now();
     callback(true,
-             std::to_string(numEntries) + " entries found within " +
-                 std::to_string(t2.getPassedTime<std::chrono::milliseconds>().count()) +
-                 "ms");
+             std::to_wstring(numEntries) + L" entries found within " +
+                 std::to_wstring(t2.getPassedTime<std::chrono::milliseconds>().count()) +
+                 L"ms");
   });
 }
 
@@ -289,63 +291,46 @@ bool Finder::loadIndexFromFile(const std::filesystem::path& filePath) {
   }
 }
 
-void Finder::search(const std::string needle /*intentional copy*/,
+void Finder::search(const std::wstring needle /*intentional copy*/,
                     const CallbackSearchResult& callback) {
+  if (!fullyIndexed) {
+    callback(true, {}, needle);
+    return;
+  }
   stopCurrentWorker();
   workerThread = std::make_unique<std::thread>([this, callback, needle]() {
-    const auto activeSearchPatterns = getActiveSearchPatterns();
+    wchar_t wildcard{useWildcardPattern ? wildcard : Dictionary::NO_WILDCARD};
 
-    std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults;
-    for (size_t i = 0; i < activeSearchPatterns.size(); ++i) {
-      if (stopWorking.load()) {
+    const size_t numFuzzyReplacements =
+        static_cast<size_t>(std::round(fuzzyCoefficient * needle.size()));
+
+    const std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults =
+        dictionary->search(
+            stopWorking, needle, numFuzzyReplacements, useWildcardPattern, searchForFolderNames, searchForFileNames);
+
+
+    std::vector<std::filesystem::path> results;
+    const int maxScore = scoredResults.begin()->first;
+    const int threshold = maxScore - needle.size();
+    std::set<std::filesystem::path> seenPaths;
+    for (auto it = scoredResults.begin(); it != scoredResults.end(); ++it) {
+      const auto& [score, path] = *it;
+      if (score < threshold) {
         break;
       }
-      std::multimap<int, std::filesystem::path, std::greater<int>> newResults =
-          dictionary->search(needle, activeSearchPatterns[i], stopWorking);
-      scoredResults.insert(newResults.begin(), newResults.end());
-
-      std::vector<std::filesystem::path> results;
-      const int maxScore = scoredResults.begin()->first;
-      const int threshold = maxScore - needle.size();
-      std::set<std::filesystem::path> seenPaths;
-      for (auto it = scoredResults.begin(); it != scoredResults.end(); ++it) {
-        const auto& [score, path] = *it;
-        if (score < threshold) {
-          scoredResults.erase(it, scoredResults.end());
-          break;
-        }
-        if (!searchForFolderNames && std::filesystem::is_directory(path)) {
-          continue;
-        }
-        if (!searchForFileNames && std::filesystem::is_regular_file(path)) {
-          continue;
-        }
-        // If the path has not been added yet, insert it into the result
-        if (seenPaths.insert(path).second) {
-          results.push_back(path);
-        }
+      // If the path has not been added yet, insert it into the result
+      if (seenPaths.insert(path).second) {
+        results.push_back(path);
       }
-      const bool finnishedSearch = i >= activeSearchPatterns.size() - 1;
-      callback(finnishedSearch, results, needle);
     }
+    callback(true, results, needle);
   });
 }
 
-std::vector<std::shared_ptr<SearchPattern>> Finder::getActiveSearchPatterns() const {
-  std::vector<std::shared_ptr<SearchPattern>> patterns;
-  patterns.emplace_back(std::make_shared<ExactMatchPattern>(ExactMatchPattern()));
-  if (useFuzzyMatchPattern) {
-    patterns.emplace_back(std::make_shared<FuzzyMatchPattern>(FuzzyMatchPattern()));
-  }
-  if (useSubsetPattern) {
-    patterns.emplace_back(std::make_shared<SubsetPattern>(SubsetPattern(minSubPatternSize)));
-  }
-  return patterns;
-}
 
-std::string Finder::getIndexingDate() const {
+std::wstring Finder::getIndexingDate() const {
   if (!fullyIndexed) {
-    return "Not indexed yet";
+    return L"Not indexed yet";
   }
 
   auto timeT = std::chrono::system_clock::to_time_t(
@@ -353,39 +338,20 @@ std::string Finder::getIndexingDate() const {
 
   std::tm* timeStruct = std::localtime(&timeT);
 
-  std::ostringstream oss;
-  oss << (timeStruct->tm_year + 1900) << '.' << std::setw(2)
-      << std::setfill('0') << (timeStruct->tm_mon + 1) << '.' << std::setw(2)
-      << std::setfill('0') << timeStruct->tm_mday;
+  std::wostringstream oss;
+  oss << (timeStruct->tm_year + 1900) << L'.' << std::setw(2)
+      << std::setfill(L'0') << (timeStruct->tm_mon + 1) << L'.' << std::setw(2)
+      << std::setfill(L'0') << timeStruct->tm_mday;
 
   return oss.str();
 }
 
-bool Finder::usesFuzzyMatchPattern() const { return useFuzzyMatchPattern; }
 bool Finder::usesWildcardPattern() const { return useWildcardPattern; }
-char Finder::getWindcard() const { return wildcard; }
-bool Finder::usesSubsetPattern() const { return useSubsetPattern; }
-size_t Finder::getMinSubPatternSearchSize() const { return minSubPatternSize; }
+wchar_t Finder::getWindcard() const { return wildcard; }
 
-
-void Finder::setUseFuzzyMatchPattern(const bool use) {
-  useFuzzyMatchPattern = use;
-}
-void Finder::setUseWildcardPattern(const bool use) {
-  useWildcardPattern = use;
-  if (dictionary != nullptr) {
-    dictionary->setWildCard(wildcard, useWildcardPattern);
-  }
-}
-void Finder::setWildcard(const char wildcardChar) {
+void Finder::setUseWildcardPattern(const bool use) { useWildcardPattern = use; }
+void Finder::setWildcard(const wchar_t wildcardChar) {
   wildcard = wildcardChar;
-  if (dictionary != nullptr) {
-    dictionary->setWildCard(wildcard, useWildcardPattern);
-  }
-}
-void Finder::setUseSubsetPattern(const bool use) { useSubsetPattern = use; }
-void Finder::setMinSubPatternSize(const size_t size) {
-  minSubPatternSize = size;
 }
 
 void Finder::setSearchForFileNames(const bool searchFileNames) {
@@ -400,3 +366,8 @@ void Finder::setSearchHiddenObjects(const bool searchHidden) {
 bool Finder::isSetSearchFileNames() const { return searchForFileNames; }
 bool Finder::isSetSearchFolderNames() const { return searchForFolderNames; }
 bool Finder::isSetSearchHiddenObjects() const { return searchHiddenObjects; }
+
+float Finder::getFuzzyCoefficient() const { return fuzzyCoefficient; }
+void Finder::setFuzzyCoefficient(const float fuzzy) {
+  fuzzyCoefficient = fuzzy;
+}

@@ -35,7 +35,7 @@ QGroupBox *FinderOutputWidget::create_search() {
 
   QLineEdit *searchField = new QLineEdit(this);
   connect(searchField, &QLineEdit::textChanged, [this](const QString &text) {
-    displayQt->search(text.toStdString());
+    displayQt->search(text.toStdWString());
   });
   vbox->addWidget(searchField);
   searchGroup->setLayout(vbox);
@@ -59,7 +59,7 @@ QGroupBox *FinderOutputWidget::create_resultField() {
 
 
 void FinderOutputWidget::setSearchResults(const std::vector<std::filesystem::path> &searchResults,
-                                          const std::string &search) {
+                                          const std::wstring &search) {
   if (QThread::currentThread() != this->thread()) {
     auto searchResultsCopy = searchResults;  // make a copy
     auto searchCopy = search;                // make a copy

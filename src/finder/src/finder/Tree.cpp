@@ -7,7 +7,9 @@
 Tree::Tree() : _root(std::make_unique<TreeNode>(0)) {}
 
 
-void Tree::insertWord(const std::string &word, const std::filesystem::path &path) {
+void Tree::insertWord(const std::wstring &word,
+                      const std::filesystem::path &path,
+                      const bool isDirectory) {
   TreeNode *nodePtr = _root.get();
   size_t remaining_depth = word.size();
   nodePtr->_depth = std::max(remaining_depth, nodePtr->_depth);
@@ -20,14 +22,13 @@ void Tree::insertWord(const std::string &word, const std::filesystem::path &path
     nodePtr = nodePtr->_children[letter];
     nodePtr->_depth = std::max(remaining_depth, nodePtr->_depth);
   }
-  nodePtr->paths.push_back(path);
+  nodePtr->_paths.emplace_back(path, isDirectory);
 }
 
-void Tree::traverse(const TreeNode *rootSubT,
-                    std::vector<std::filesystem::path> &pathList) const {
+void Tree::traverse(const TreeNode *rootSubT, std::vector<TreeNode::PathInfo> &pathList) const {
   if (rootSubT->isLeaf()) {
     pathList.insert(
-        std::end(pathList), std::cbegin(rootSubT->paths), std::cend(rootSubT->paths));
+        std::end(pathList), std::cbegin(rootSubT->_paths), std::cend(rootSubT->_paths));
   }
 
   if (!rootSubT->_children.empty()) {
@@ -38,57 +39,90 @@ void Tree::traverse(const TreeNode *rootSubT,
 }
 
 void Tree::searchHelper(const TreeNode *nodePtr,
-                        const std::string &needle,
-                        std::vector<std::filesystem::path> &result) const {
-  if (needle.empty()) {
+                        Needle &needle,
+                        std::vector<TreeNode::PathInfo> &result) const {
+  if (needle.found()) {
     // Base case: we’ve processed all prefix characters, traverse the remaining tree
     traverse(nodePtr, result);
+    return;
+  }
+
+  // if the needle is longer than the remaining depth, we wont finde anything.
+  if (nodePtr->_depth < needle.getMinNecessaryDepth()) {
+    return;
+  }
+
+  // if needle is "picture"
+  // and this branch only offers "greatpicture" than the below methods faile.
+  // so search all children with the complete needle
+  // this is ok, because if needle "pictures" never gets reduced to an empty needle (see base case) results wont be written.
+  // this only makes sense if the depth is big enough
+  if (needle.notIncremented()) {
+    Needle copy{needle};
+    for (auto it = nodePtr->_children.begin(); it != nodePtr->_children.end(); ++it) {
+      if (it->second->_depth < needle.getMinNecessaryDepth()) {
+        continue;
+      }
+      searchHelper(it->second, copy, result);
+    }
+  }
+
+
+  // if we have a wild card, always use that
+  if (needle.nextIsWildCard()) {
+    Needle copy{needle};
+    copy.nextIndex();
+    for (const auto &child : nodePtr->_children) {
+      searchHelper(child.second, copy, result);
+    }
     return;
   }
 
   // if needle is "picture"
   // than search on this tree branch for p
   // and give all the "p" children the needle "icture"
-  char letter = needle[0];
-  std::string remainingNeedle = needle.substr(1);
+  char letter = needle.front();
 
-  if (useWildCard && wildcard == letter) {
-    for (const auto &child : nodePtr->_children) {
-      searchHelper(child.second, remainingNeedle, result);
-    }
-  } else {
-    auto it = nodePtr->_children.find(letter);
-    if (it != nodePtr->_children.end()) {
-      searchHelper(it->second, remainingNeedle, result);
-    }
-  }
-
-  // if needle is "picture"
-  // and this branch only offers "greatpicture" than the above failes
-  // so search all children with the complete needle
-  // this is ok, because if needle "pictures" never gets reduced to an empty needle (see base case) results wont be written.
-  // this only makes sense if the depth is big enough
-  if (nodePtr->_depth < needle.size()) {
+  auto it = nodePtr->_children.find(letter);
+  if (it != nodePtr->_children.end()) {
+    needle.nextIndex();
+    searchHelper(it->second, needle, result);
     return;
   }
-  for (auto it = nodePtr->_children.begin(); it != nodePtr->_children.end(); ++it) {
-    if (it->second->_depth < needle.size() - 1) {
-      continue;
-    }
-    searchHelper(it->second, needle, result);
+
+  // needle not found, lets see, if we still have a fuzzy search left
+
+  if (!needle.canDoFuzzySearch()) {
+    return;
   }
+  Needle copySwapLetter{needle};
+  copySwapLetter.useFuzzySeaerch();
+  // this is equal to wild card
+  copySwapLetter.nextIndex();
+  for (const auto &child : nodePtr->_children) {
+    searchHelper(child.second, copySwapLetter, result);
+  }
+
+  Needle copyaddLetter{needle};
+  copyaddLetter.useFuzzySeaerch();
+  // add any possible letter to the search string by not incrementing the index
+  for (const auto &child : nodePtr->_children) {
+    searchHelper(child.second, copyaddLetter, result);
+  }
+
+  Needle copyremoveLetter{needle};
+  copyremoveLetter.useFuzzySeaerch();
+  // remove the current letter to the search string by incrementing the index
+  // and returning to the current node
+  copyremoveLetter.nextIndex();
+  searchHelper(nodePtr, copyaddLetter, result);
 }
 
-std::vector<std::filesystem::path> Tree::search(const std::string &needle) const {
-  std::vector<std::filesystem::path> result;
+std::vector<TreeNode::PathInfo> Tree::search(Needle needle) const {
+  std::vector<TreeNode::PathInfo> result;
   const TreeNode *nodePtr = _root.get();
   searchHelper(nodePtr, needle, result);
   return result;
-}
-
-void Tree::setWildCard(const char wildCard, bool useWildcard) {
-  this->wildcard = wildCard;
-  this->useWildCard = useWildcard;
 }
 
 size_t Tree::getMaxEntryLength() const { return _root->_depth; }

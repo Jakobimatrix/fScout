@@ -23,27 +23,14 @@ class Display : public DisplaySettings {
   using setSearchResult = std::function<void(const std::vector<std::string>&)>;
 
   // <SEARCH> functionallity is public for Bad Boy reinterpret_cast<come and arrestme> magic
-  void search(const std::string&);
+  void search(const std::wstring&);
 
-  void setUseFuzzyMatchPattern(bool use) {
-    finder.setUseFuzzyMatchPattern(use);
-  }
+
   void setUseWildcardPattern(bool use) { finder.setUseWildcardPattern(use); }
-  char getWildcardChar() const { return finder.getWindcard(); }
-  void setWildcardChar(const char wildchar) { finder.setWildcard(wildchar); }
-  void setUseSubsearchPattern(const bool use) {
-    finder.setUseSubsetPattern(use);
-  }
-  size_t getMinSubsearchSize() const {
-    return finder.getMinSubPatternSearchSize();
-  }
-  void setMinSubsearchSize(const std::size_t size) {
-    finder.setMinSubPatternSize(size);
-  }
+  wchar_t getWildcardChar() const { return finder.getWindcard(); }
+  void setWildcardChar(const wchar_t wildchar) { finder.setWildcard(wildchar); }
 
-  bool usesFuzzyMatchPattern() const { return finder.usesFuzzyMatchPattern(); }
   bool usesWildcardPattern() const { return finder.usesWildcardPattern(); }
-  bool usesSubsearchPattern() const { return finder.usesSubsetPattern(); }
   void setSearchForFileNames(bool searchFileNames);
   void setSearchForFolderNames(bool searchFolderNames);
   bool isSetSearchFileNames() const { return finder.isSetSearchFileNames(); }
@@ -54,6 +41,8 @@ class Display : public DisplaySettings {
   void setSearchHiddenObjects(const bool searchHidden) {
     finder.setSearchHiddenObjects(searchHidden);
   }
+  float getFuzzyCoeff() const { return finder.getFuzzyCoefficient(); }
+  void setFuzzyCoeff(const float coef) { finder.setFuzzyCoefficient(coef); }
   // </SEARCH>
   int getDoubleClickInterval() const { return doubleClickInterval_ms; }
 
@@ -81,8 +70,7 @@ class Display : public DisplaySettings {
    * \param title A title displayed over the question.
    * \return Returns the users decision.
    */
-  virtual bool askYesNoQuestion(const std::string& question,
-                                const std::string& title = "") = 0;
+  virtual bool askYesNoQuestion(const std::wstring& question, const std::wstring& title) = 0;
 
   /*!
    * \brief Implement a popup displaying title and information.
@@ -90,8 +78,7 @@ class Display : public DisplaySettings {
    * \param text The information displayed to the user.
    * \param title A title displayed over the question.
    */
-  virtual void popup_info(const std::string& text,
-                          const std::string& title = "") = 0;
+  virtual void popup_info(const std::wstring& text, const std::wstring& titel) = 0;
 
   /*!
    * \brief Implement a popup displaying title and warning.
@@ -99,8 +86,7 @@ class Display : public DisplaySettings {
    * \param warning The warning displayed to the user.
    * \param title A title displayed over the question.
    */
-  virtual void popup_warning(const std::string& warning,
-                             const std::string& title = "") = 0;
+  virtual void popup_warning(const std::wstring& warning, const std::wstring&) = 0;
 
   /*!
    * \brief Implement a popup displaying title and error.
@@ -108,8 +94,7 @@ class Display : public DisplaySettings {
    * \param error The error message displayed to the user.
    * \param title A title displayed over the question.
    */
-  virtual void popup_error(const std::string& error,
-                           const std::string& title = "") = 0;
+  virtual void popup_error(const std::wstring& error, const std::wstring& title) = 0;
 
 
   /*!
@@ -117,7 +102,7 @@ class Display : public DisplaySettings {
    * show which file is loaded.
    * \param file_path The path displayed to the user.
    */
-  virtual void setWindowFilePath(const std::string& file_path) = 0;
+  virtual void setWindowFilePath(const std::wstring& file_path) = 0;
 
   /*!
    * \brief Display status string in bottom area of the window to
@@ -126,7 +111,7 @@ class Display : public DisplaySettings {
    * \param timeout_ms time in ms when the status shall disapear.
    * if timeout_ms = 0, display until other status is pushed.
    */
-  virtual void setStatus(const std::string& msg, int timeout_ms = 0) = 0;
+  virtual void setStatus(const std::wstring& msg, int timeout_ms = 0) = 0;
 
   /*!
    * \brief Display the search results
@@ -134,7 +119,7 @@ class Display : public DisplaySettings {
    * \param search The original search string
    */
   virtual void setSearchResults(const std::vector<std::filesystem::path>& searchResults,
-                                const std::string& search) = 0;
+                                const std::wstring& search) = 0;
 
   /*!
    * \brief Reset Display to "uninitiated"
@@ -147,9 +132,9 @@ class Display : public DisplaySettings {
    * \param num_files The number of files in the index
    * \param indexing_date The date of the indexing
    */
-  virtual void updateInfo(const std::string& root_path,
+  virtual void updateInfo(const std::wstring& root_path,
                           const size_t num_files,
-                          const std::string& indexingDate) = 0;
+                          const std::wstring& indexingDate) = 0;
 
   [[nodiscard]] bool exitGracefully();
 
@@ -189,16 +174,16 @@ class Display : public DisplaySettings {
   int getDisplayScale() const { return disp_scale; }
 
  private:
-  void callbackIndexing(bool success, const std::string& msg);
+  void callbackIndexing(bool success, const std::wstring& msg);
   void callbackSearch(bool finnished,
                       const std::vector<std::filesystem::path>& results,
-                      const std::string& search);
+                      const std::wstring& search);
 
 
   // calculation
   Finder finder;
 
-  std::string last_search;
+  std::wstring last_search;
 
 
   // SETTINGS

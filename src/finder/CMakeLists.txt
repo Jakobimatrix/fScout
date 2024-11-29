@@ -1,7 +1,13 @@
 add_library(finder_lib STATIC
+  src/finder/Dictionary.h
   src/finder/Dictionary.cpp
+  src/finder/Needle.h
+  src/finder/Needle.cpp
+  src/finder/Tree.h
   src/finder/Tree.cpp
+  src/finder/TreeNode.h
   src/finder/TreeNode.cpp
+  src/finder/Finder.h
   src/finder/Finder.cpp
   src/finder/SearchPattern.h
   )

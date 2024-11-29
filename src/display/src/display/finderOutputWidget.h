@@ -25,7 +25,7 @@ class FinderOutputWidget : public QWidget {
   void reset();
 
   void setSearchResults(const std::vector<std::filesystem::path> &searchResults,
-                        const std::string &search);
+                        const std::wstring &search);
   void changeScale(const double scaleFactor);
 
  protected:

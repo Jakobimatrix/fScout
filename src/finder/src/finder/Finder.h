@@ -14,7 +14,7 @@
 #include <thread>
 
 using FinderSettings =
-    util::Settings<std::variant<bool *, size_t *, char *, std::set<std::string> *>>;
+    util::Settings<std::variant<bool *, float *, size_t *, wchar_t *, std::unordered_set<std::wstring> *>>;
 class Finder : public FinderSettings {
   std::filesystem::path root = std::filesystem::path();
   bool fullyIndexed = false;
@@ -22,9 +22,9 @@ class Finder : public FinderSettings {
   std::unique_ptr<std::thread> workerThread;
   std::atomic<bool> stopWorking = false;
 
-  using CallbackFinnished = std::function<void(const bool, const std::string &msg)>;
+  using CallbackFinnished = std::function<void(const bool, const std::wstring &msg)>;
   using CallbackSearchResult =
-      std::function<void(const bool, const std::vector<std::filesystem::path> &, const std::string &)>;
+      std::function<void(const bool, const std::vector<std::filesystem::path> &, const std::wstring &)>;
   size_t numEntries = 0;
 
  public:
@@ -41,30 +41,24 @@ class Finder : public FinderSettings {
   bool saveCurrentIndex(const std::filesystem::path &);
   bool loadIndexFromFile(const std::filesystem::path &);
 
-  bool usesFuzzyMatchPattern() const;
   bool usesWildcardPattern() const;
-  char getWindcard() const;
-  bool usesSubsetPattern() const;
-  size_t getMinSubPatternSearchSize() const;
-
-
-  void setUseFuzzyMatchPattern(const bool use);
+  wchar_t getWindcard() const;
   void setUseWildcardPattern(const bool use);
-  void setWildcard(const char wildcardChar);
-  void setUseSubsetPattern(const bool use);
-  void setMinSubPatternSize(const size_t size);
+  void setWildcard(const wchar_t wildcardChar);
 
   void setSearchForFileNames(const bool searchFileNames);
   void setSearchForFolderNames(const bool searchFolderNames);
   void setSearchHiddenObjects(const bool searchHidden);
+  void setFuzzyCoefficient(const float fuzzy);
   bool isSetSearchFileNames() const;
   bool isSetSearchFolderNames() const;
   bool isSetSearchHiddenObjects() const;
+  float getFuzzyCoefficient() const;
 
 
-  void search(const std::string needle, const CallbackSearchResult &);
+  void search(const std::wstring needle, const CallbackSearchResult &);
 
-  std::string getIndexingDate() const;
+  std::wstring getIndexingDate() const;
 
   void visualize() const { dictionary->visualize(); }
 
@@ -72,27 +66,26 @@ class Finder : public FinderSettings {
   void setDefaultSearchExceptions();
   bool shouldIndexEntry(const std::filesystem::directory_entry &entry) const;
   void startIndexing(const CallbackFinnished &);
-  std::vector<std::shared_ptr<SearchPattern>> getActiveSearchPatterns() const;
 
   // SETTINGS
-  bool useFuzzyMatchPattern = true;
-  const std::string USE_FUZZY_PATTERN = "UseFuzzyPattern";
+  float fuzzyCoefficient = 0.25f;
+  const std::string FUZZY_SEARCH_COEFF = "fuzzySearch";
   bool useWildcardPattern = false;
   const std::string USE_WILDCARD_PATTERN = "UseWildcardPattern";
-  char wildcard = '*';
+  wchar_t wildcard = L'*';
   const std::string WILDCARD_PATTERN = "Wildcard";
-  bool useSubsetPattern = false;
-  const std::string USE_SubSet_PATTERN = "UseSubSetPattern";
-  size_t minSubPatternSize = 3;
-  const std::string SUBSET_SIZE = "SubsetSize";
   bool searchForFolderNames = true;
   const std::string SEACH_FOLDERS = "SearchFolders";
   bool searchForFileNames = true;
   const std::string SEACH_FILES = "SearchFiles";
   bool searchHiddenObjects = false;
   const std::string SEACH_HIDDEN_OBJECTS = "SearchHiddenObjects";
-  std::set<std::string> exceptions;
+  std::unordered_set<std::wstring> exceptions;
   const std::string SEACH_EXEPTIONS = "SearchExceptions";
 
   std::chrono::steady_clock::time_point indexingTime;
+
+ public:
+  static constexpr float MAX_FUZZY_COEFF = 1.f;
+  static constexpr float MIN_FUZZY_COEFF = 0.f;
 };

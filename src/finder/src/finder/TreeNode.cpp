@@ -12,12 +12,12 @@ void TreeNode::serialize(std::ofstream& outFile) const {
 
   if (is_leaf) {
     // Serialize the size of the paths vector
-    size_t pathsCount = paths.size();
+    size_t pathsCount = _paths.size();
     outFile.write(reinterpret_cast<const char*>(&pathsCount), sizeof(pathsCount));
 
     // Serialize each path as a string
-    for (const auto& path : paths) {
-      std::string pathString = path.string();
+    for (const auto& path : _paths) {
+      std::string pathString = path.path.string();
       size_t pathLength = pathString.size();
 
       // Write the length of the string
@@ -25,6 +25,9 @@ void TreeNode::serialize(std::ofstream& outFile) const {
 
       // Write the string itself
       outFile.write(pathString.c_str(), pathLength);
+
+      const char isDirectory = path.isDirectory ? '1' : '0';
+      outFile.write(&isDirectory, sizeof(isDirectory));
     }
   }
 
@@ -33,9 +36,10 @@ void TreeNode::serialize(std::ofstream& outFile) const {
   outFile.write(reinterpret_cast<const char*>(&childrenCount), sizeof(childrenCount));
 
   // Serialize each child node
-  for (const auto& [letter, childNode] : _children) {
-    outFile.write(&letter, sizeof(letter));  // Write the character key
-    childNode->serialize(outFile);           // Recursively serialize child node
+  for (const auto& child : _children) {
+
+    outFile.write(reinterpret_cast<const char*>(&child.first), sizeof(child.first));  // Write the character key
+    child.second->serialize(outFile);  // Recursively serialize child node
   }
 }
 
@@ -62,8 +66,12 @@ TreeNode* TreeNode::deserialize(std::ifstream& inFile) {
       std::string pathString(pathLength, '\0');
       inFile.read(&pathString[0], pathLength);
 
-      // Convert the string to a filesystem::path and add to the vector
-      node->paths.emplace_back(pathString);
+      char isDirChar;
+      inFile.read(&isDirChar, sizeof(isDirChar));
+      bool isDir = isDirChar == 1 ? true : false;
+
+      // Convert the Info to a TreeNode::PathInfo and add to the vector
+      node->_paths.emplace_back(pathString, isDir);
     }
   }
 
@@ -81,7 +89,7 @@ TreeNode* TreeNode::deserialize(std::ifstream& inFile) {
   return node;
 }
 
-bool TreeNode::isLeaf() const { return !paths.empty(); }
+bool TreeNode::isLeaf() const { return !_paths.empty(); }
 
 
 void TreeNode::print(const TreeNode* node, const std::string& prefix, bool is_last) {
@@ -89,10 +97,10 @@ void TreeNode::print(const TreeNode* node, const std::string& prefix, bool is_la
 
   if (node->isLeaf()) {
     // Print the paths for leaf nodes
-    for (size_t i = 0; i < node->paths.size(); ++i) {
-      std::cout << currentPrefix << node->paths[i].filename().string() << " -> "
-                << node->paths[i].string() << "\n";
-      if (i != node->paths.size() - 1) {
+    for (size_t i = 0; i < node->_paths.size(); ++i) {
+      std::cout << currentPrefix << node->_paths[i].path.filename().string()
+                << " -> " << node->_paths[i].path.string() << "\n";
+      if (i != node->_paths.size() - 1) {
         currentPrefix = prefix + (is_last ? " " : "│");  // Align next path entries
       }
     }

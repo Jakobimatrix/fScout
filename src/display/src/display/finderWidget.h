@@ -19,9 +19,9 @@ class FinderWidget : public QWidget {
 
   void reset();
 
-  void updateInfo(const std::string &root_path,
+  void updateInfo(const std::wstring &root_path,
                   const size_t num_files,
-                  const std::string &indexing_date);
+                  const std::wstring &indexing_date);
 
 
 
@@ -29,6 +29,7 @@ class FinderWidget : public QWidget {
  protected slots:
 
  private:
+  std::wstring rootpath_default;
   DisplayQt *displayQt;
   QGroupBox *create_controlls();
   QGroupBox *create_info();

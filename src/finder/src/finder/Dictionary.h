@@ -9,16 +9,20 @@
 
 class Dictionary {
  public:
+  constexpr static wchar_t NO_WILDCARD{'\n'};
   Dictionary();
   ~Dictionary();
 
-  void addPath(const std::filesystem::path &);
+  void addPath(const std::filesystem::path &, const bool);
 
 
   std::multimap<int, std::filesystem::path, std::greater<int>> search(
-      const std::string &needle,
-      const std::shared_ptr<SearchPattern> &pattern,
-      std::atomic<bool> &stopSearch) const;
+      std::atomic<bool> &stopSearch,
+      const std::wstring &needle_in,
+      const size_t num_fuzzy_replacements,
+      const wchar_t wildcard,
+      const bool searchDirectories,
+      const bool searchFiles) const;
 
   void serialize(const std::string &filename,
                  const std::chrono::steady_clock::time_point &timeOfIndexing) const;
@@ -30,11 +34,10 @@ class Dictionary {
 
   void visualize() const;
 
-  void setWildCard(const char wildCard, bool useWildcard);
-
-  static int scoreChars(char a, char b);
-  static int scoreMatch(const std::string &needle, const std::string &match);
-  static std::vector<int> getMatchScores(const std::string &needle, const std::string &match);
+  static int scoreChars(wchar_t a, wchar_t b);
+  static int scoreMatch(const std::wstring &needle, const std::wstring &match);
+  static std::vector<int> getMatchScores(const std::wstring &needle,
+                                         const std::wstring &match);
 
  private:
   std::unique_ptr<Tree> tree;

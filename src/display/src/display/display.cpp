@@ -42,12 +42,12 @@ void Display::loadOldIndex() {
 }
 
 void Display::open() {
-  setStatus("choosing root folder");
+  setStatus(L"choosing root folder");
 
   const auto choosenPath = openDirChooserDialog();
   if (choosenPath.empty()) {
     if (!finder.isInitiated()) {
-      setStatus("no root folder selected for search.");
+      setStatus(L"no root folder selected for search.");
     }
     return;
   }
@@ -56,7 +56,7 @@ void Display::open() {
     finder.stopCurrentWorker();
   }
 
-  setStatus("Searching through root Folder: " + choosenPath.string());
+  setStatus(L"Searching through root Folder: " + choosenPath.wstring());
   resetDisplayElements();
   finder.setRootPath(
       choosenPath,
@@ -72,25 +72,27 @@ bool Display::exitGracefully() {
   return true;
 }
 
-void Display::callbackIndexing(bool success, const std::string& msg) {
+void Display::callbackIndexing(bool success, const std::wstring& msg) {
   if (success) {
     if (!finder.isInitiated()) {
-      setStatus("Indexing: " + msg);
+      setStatus(L"Indexing: " + msg);
     } else {
-      setStatus("Indexing finnished: " + msg);
-      updateInfo(finder.getRootFolder().string(), finder.getNumEntries(), finder.getIndexingDate());
+      setStatus(L"Indexing finnished: " + msg);
+      updateInfo(finder.getRootFolder().wstring(),
+                 finder.getNumEntries(),
+                 finder.getIndexingDate());
     }
   } else {
-    popup_error("Indexing stopped: " + msg);
+    popup_error(L"Indexing stopped: " + msg, L"Error");
   }
 }
 
-void Display::search(const std::string& needel) {
+void Display::search(const std::wstring& needel) {
   if (needel.size() < 2) {
     return;
   }
   last_search = needel;
-  setStatus("Search for " + needel);
+  setStatus(L"Search for " + needel);
   finder.search(needel,
                 std::bind(&Display::callbackSearch,
                           this,
@@ -101,13 +103,13 @@ void Display::search(const std::string& needel) {
 
 void Display::callbackSearch(bool finnished,
                              const std::vector<std::filesystem::path>& results,
-                             const std::string& search) {
+                             const std::wstring& search) {
   setSearchResults(results, search);
   if (finnished) {
-    setStatus("Search finnished, found " + std::to_string(results.size()) +
-              " matches");
+    setStatus(L"Search finnished, found " + std::to_wstring(results.size()) +
+              L" matches");
   } else {
-    setStatus("searching ... " + std::to_string(results.size()));
+    setStatus(L"searching ... " + std::to_wstring(results.size()));
   }
 }
 
@@ -116,7 +118,7 @@ void Display::setSearchForFileNames(bool searchFileNames) {
   if (isSetSearchFileNames() == searchFileNames)
     return;
 
-  finder.setUseWildcardPattern(searchFileNames);
+  finder.setSearchForFileNames(searchFileNames);
   search(last_search);
 }
 void Display::setSearchForFolderNames(bool searchFolderNames) {

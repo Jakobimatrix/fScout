@@ -17,8 +17,15 @@ struct TreeNode {
   }
 
   size_t _depth;
-  std::unordered_map<char, TreeNode*> _children;
-  std::vector<std::filesystem::path> paths;
+  std::unordered_map<wchar_t, TreeNode*> _children;
+  struct PathInfo {
+    PathInfo(const std::filesystem::path& path, const bool isDir)
+        : path(path), isDirectory(isDir) {}
+    std::filesystem::path path;
+    bool isDirectory;
+  };
+
+  std::vector<PathInfo> _paths;
 
   bool isLeaf() const;
 

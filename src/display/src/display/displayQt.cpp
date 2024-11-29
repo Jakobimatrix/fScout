@@ -54,9 +54,9 @@ void DisplayQt::resetDisplayElements() {
   finder_output_widget->reset();
 }
 
-void DisplayQt::updateInfo(const std::string &root_path,
+void DisplayQt::updateInfo(const std::wstring &root_path,
                            const size_t num_files,
-                           const std::string &indexingDate) {
+                           const std::wstring &indexingDate) {
   finder_widget->updateInfo(root_path, num_files, indexingDate);
 }
 
@@ -127,28 +127,32 @@ void DisplayQt::moveEvent(QMoveEvent *event) {
   QMainWindow::moveEvent(event);
 }
 
-bool DisplayQt::askYesNoQuestion(const std::string &question, const std::string &title) {
+bool DisplayQt::askYesNoQuestion(const std::wstring &question, const std::wstring &title) {
   QMessageBox::StandardButton ret;
-  ret = QMessageBox::question(
-      this, tr(title.c_str()), tr(question.c_str()), QMessageBox::Yes | QMessageBox::No);
+  ret = QMessageBox::question(this,
+                              QString::fromStdWString(title),
+                              QString::fromStdWString(question),
+                              QMessageBox::Yes | QMessageBox::No);
   return ret == QMessageBox::Yes;
 }
 
-void DisplayQt::popup_info(const std::string &text, const std::string &title) {
-  QMessageBox::information(this, tr(text.c_str()), tr(title.c_str()), QMessageBox::Ok);
+void DisplayQt::popup_info(const std::wstring &text, const std::wstring &title) {
+  QMessageBox::information(
+      this, QString::fromStdWString(text), QString::fromStdWString(title), QMessageBox::Ok);
 }
 
-void DisplayQt::popup_warning(const std::string &text, const std::string &title) {
-  QMessageBox::warning(this, tr(text.c_str()), tr(title.c_str()), QMessageBox::Ok);
+void DisplayQt::popup_warning(const std::wstring &text, const std::wstring &title) {
+  QMessageBox::warning(
+      this, QString::fromStdWString(text), QString::fromStdWString(title), QMessageBox::Ok);
 }
 
-void DisplayQt::popup_error(const std::string &text, const std::string &title) {
-  QMessageBox::critical(this, tr(text.c_str()), tr(title.c_str()), QMessageBox::Ok);
+void DisplayQt::popup_error(const std::wstring &text, const std::wstring &title) {
+  QMessageBox::critical(
+      this, QString::fromStdWString(text), QString::fromStdWString(title), QMessageBox::Ok);
 }
 
-void DisplayQt::setWindowFilePath(const std::string &file_path) {
-  const QString path(file_path.c_str());
-  QMainWindow::setWindowFilePath(path);
+void DisplayQt::setWindowFilePath(const std::wstring &file_path) {
+  QMainWindow::setWindowFilePath(QString::fromStdWString(file_path));
 }
 
 
@@ -239,12 +243,12 @@ void DisplayQt::saveSplitterState() {
   saveSplitWidgetState(bit_string_state);
 }
 
-void DisplayQt::setStatus(const std::string &msg, int timeout) {
-  statusBar()->showMessage(tr(msg.c_str()), timeout);
+void DisplayQt::setStatus(const std::wstring &msg, int timeout) {
+  statusBar()->showMessage(QString::fromStdWString(msg), timeout);
 }
 
 void DisplayQt::setStatus(const QString &msg, int timeout) {
-  setStatus(msg.toStdString(), timeout);
+  setStatus(msg.toStdWString(), timeout);
 }
 
 void DisplayQt::about() {
@@ -348,6 +352,6 @@ void DisplayQt::createStatusBar() {
 
 
 void DisplayQt::setSearchResults(const std::vector<std::filesystem::path> &searchResults,
-                                 const std::string &search) {
+                                 const std::wstring &search) {
   finder_output_widget->setSearchResults(searchResults, search);
 }

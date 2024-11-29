@@ -24,28 +24,28 @@ class DisplayQt : public QMainWindow, public Display {
   void moveEvent(QMoveEvent *event) override;
 
   void setSearchResults(const std::vector<std::filesystem::path> &searchResults,
-                        const std::string &search) override;
+                        const std::wstring &search) override;
 
  private:
-  void setStatus(const std::string &msg, int timeout = 0) override;
+  void setStatus(const std::wstring &msg, int timeout = 0) override;
   void setStatus(const QString &msg, int timeout = 0);
 
-  bool askYesNoQuestion(const std::string &question,
-                        const std::string &title = "") override;
+  bool askYesNoQuestion(const std::wstring &question,
+                        const std::wstring &title = L"") override;
 
-  void popup_info(const std::string &text, const std::string &title = "") override;
+  void popup_info(const std::wstring &text, const std::wstring &title = L"") override;
 
-  void popup_warning(const std::string &text, const std::string &title = "") override;
+  void popup_warning(const std::wstring &text, const std::wstring &title = L"") override;
 
-  void popup_error(const std::string &text, const std::string &title = "") override;
+  void popup_error(const std::wstring &text, const std::wstring &title = L"") override;
 
-  void setWindowFilePath(const std::string &file_path) override;
+  void setWindowFilePath(const std::wstring &file_path) override;
 
   void resetDisplayElements() override;
 
-  void updateInfo(const std::string &root_path,
+  void updateInfo(const std::wstring &root_path,
                   const size_t num_files,
-                  const std::string &indexingDate) override;
+                  const std::wstring &indexingDate) override;
 
   std::filesystem::path openDirChooserDialog() override;
 

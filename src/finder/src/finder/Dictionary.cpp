@@ -1,4 +1,5 @@
 #include <finder/Dictionary.h>
+#include <finder/Needle.h>
 
 #include <atomic>
 #include <fstream>
@@ -15,52 +16,49 @@ Dictionary::Dictionary() { tree = std::make_unique<Tree>(); }
 Dictionary::~Dictionary() = default;
 
 
-void Dictionary::addPath(const std::filesystem::path& path) {
-
-
-  std::string name = util::getLastPathComponent(path);
-
+void Dictionary::addPath(const std::filesystem::path& path, const bool isDirectory) {
+  std::wstring name = util::getLastPathComponent(path);
   // to save storage and computation time, we save everything lower case.
   // The scoring function at the end will score exact matches better than case insensitive matches.
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-  tree->insertWord(name, path);
+  tree->insertWord(name, path, isDirectory);
 }
 
 
 std::multimap<int, std::filesystem::path, std::greater<int>> Dictionary::search(
-    const std::string& needle_in,
-    const std::shared_ptr<SearchPattern>& pattern,
-    std::atomic<bool>& stopSearch) const {
+    std::atomic<bool>& stopSearch,
+    const std::wstring& needle_in,
+    const size_t num_fuzzy_replacements,
+    const wchar_t wildcard,
+    const bool searchDirectories,
+    const bool searchFiles) const {
 
   // to save storage and computation time, we save everything lower case.
   // The scoring function at the end will score exact matches better than case insensitive matches.
-  std::string needle = needle_in;
+  std::wstring needle = needle_in;
   std::transform(needle.begin(), needle.end(), needle.begin(), ::tolower);
-  const std::vector<std::string> allNeedles = pattern->generateNeedles(needle);
+  Needle n{needle};
+  if (num_fuzzy_replacements > 0) {
+    n.setFuzzySearch(num_fuzzy_replacements);
+  }
+  if (wildcard != NO_WILDCARD) {
+    n.useWildCard(wildcard);
+  }
+  std::vector<TreeNode::PathInfo> matches = tree->search(n);
   std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults;
 
-  for (const auto& newNeedle : allNeedles) {
+  for (const auto& match : matches) {
     if (stopSearch.load()) {
       return scoredResults;
     }
-    if (min_search_size > newNeedle.size()) {
-      continue;
-    }
-    auto matches = tree->search(newNeedle);
-    for (const auto& match : matches) {
-      if (stopSearch.load()) {
-        return scoredResults;
-      }
-      scoredResults.emplace(scoreMatch(needle_in, util::getLastPathComponent(match)), match);
+    if (match.isDirectory && searchDirectories || !match.isDirectory && searchFiles) {
+      scoredResults.emplace(
+          scoreMatch(needle_in, util::getLastPathComponent(match.path)), match.path);
     }
   }
-
   return scoredResults;
 }
 
-void Dictionary::setWildCard(const char wildCard, bool useWildcard) {
-  tree->setWildCard(wildCard, useWildcard);
-}
 
 void Dictionary::serialize(const std::string& filename,
                            const std::chrono::steady_clock::time_point& timeOfIndexing) const {
@@ -128,10 +126,10 @@ void Dictionary::deserialize(const std::string& filename,
   inFile.close();
 }
 
-int Dictionary::scoreChars(char a, char b) {
+int Dictionary::scoreChars(wchar_t a, wchar_t b) {
   // Commonly mixed-up character pairs
   // clang-format off
-  static const std::unordered_map<char, std::vector<char>> confusedChars = {
+  static const std::unordered_map<wchar_t, std::vector<wchar_t>> confusedChars = {
     {'k', {'c'}}, {'c', {'k'}},  // Phonetically similar
     {'K', {'C'}}, {'C', {'K'}},  // Phonetically similar
     {'b', {'p'}}, {'p', {'b'}},  // Phonetically similar
@@ -177,7 +175,7 @@ int Dictionary::scoreChars(char a, char b) {
   return 0;  // Total mismatch
 }
 
-int Dictionary::scoreMatch(const std::string& searchString, const std::string& match) {
+int Dictionary::scoreMatch(const std::wstring& searchString, const std::wstring& match) {
 
   int bestScore = 0;
 
@@ -195,8 +193,8 @@ int Dictionary::scoreMatch(const std::string& searchString, const std::string& m
   return bestScore;
 }
 
-std::vector<int> Dictionary::getMatchScores(const std::string& searchString,
-                                            const std::string& match) {
+std::vector<int> Dictionary::getMatchScores(const std::wstring& searchString,
+                                            const std::wstring& match) {
   std::vector<int> charScores(match.size());
   std::vector<int> bestScores;
   int bestScoreOffset = -(int)searchString.size() + 1;
