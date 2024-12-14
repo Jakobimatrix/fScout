@@ -44,18 +44,32 @@ QGroupBox *FinderWidget::create_controlls() {
   QGroupBox *controlsGroup = new QGroupBox("Search Patterns");
 
   QGridLayout *grid = new QGridLayout;
+  grid->setColumnStretch(0, 0);  // First column gets no flexible stretch
+  grid->setColumnStretch(1, 0);  // Second column gets no extra stretch
+  grid->setColumnStretch(2, 1);  // Third column gets flexible stretch
+
+  constexpr int INPUT_WIDTH_EM = 50;
 
   // Checkboxes for search patterns
   QCheckBox *wildcardSearchBox = new QCheckBox("Wildcard (*) Search");
   QLineEdit *wildcardCharInput = new QLineEdit;
   wildcardCharInput->setMaxLength(2);
+  wildcardCharInput->setMaximumWidth(INPUT_WIDTH_EM);
+  wildcardCharInput->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   wildcardCharInput->setText(QString(displayQt->getWildcardChar()));
 
   QLabel *fuzzyTemperatureLabel = new QLabel("Fuzzy Search strength in %");
   QSpinBox *fuzzyTemperatureInput = new QSpinBox;
+  QSlider *fuzzyTemperatureSlider = new QSlider(Qt::Horizontal);
   fuzzyTemperatureInput->setMinimum(static_cast<int>(Finder::MIN_FUZZY_COEFF * 100.f));
   fuzzyTemperatureInput->setMaximum(static_cast<int>(Finder::MAX_FUZZY_COEFF * 100.f));
   fuzzyTemperatureInput->setValue(static_cast<int>(displayQt->getFuzzyCoeff() * 100.f));
+  fuzzyTemperatureInput->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  fuzzyTemperatureInput->setMaximumWidth(INPUT_WIDTH_EM);
+  fuzzyTemperatureSlider->setMinimum(static_cast<int>(Finder::MIN_FUZZY_COEFF * 100.f));
+  fuzzyTemperatureSlider->setMaximum(static_cast<int>(Finder::MAX_FUZZY_COEFF * 100.f));
+  fuzzyTemperatureSlider->setValue(static_cast<int>(displayQt->getFuzzyCoeff() * 100.f));
+  fuzzyTemperatureSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
 
   wildcardSearchBox->setChecked(displayQt->usesWildcardPattern());
@@ -63,13 +77,23 @@ QGroupBox *FinderWidget::create_controlls() {
   // Connect signals to displayQt for search patterns
   connect(wildcardSearchBox, &QCheckBox::stateChanged, displayQt, [this](int state) {
     displayQt->setUseWildcardPattern(state == Qt::Checked);
+    displayQt->searchAgain();
   });
   connect(fuzzyTemperatureInput,
           QOverload<int>::of(&QSpinBox::valueChanged),
           displayQt,
           [this](int value) {
             displayQt->setFuzzyCoeff(static_cast<float>(value) / 100.f);
+            displayQt->searchAgain();
           });
+
+  QObject::connect(
+      fuzzyTemperatureSlider, &QSlider::valueChanged, fuzzyTemperatureInput, &QSpinBox::setValue);
+  QObject::connect(fuzzyTemperatureInput,
+                   QOverload<int>::of(&QSpinBox::valueChanged),
+                   fuzzyTemperatureSlider,
+                   &QSlider::setValue);
+
 
   connect(wildcardCharInput,
           &QLineEdit::textChanged,
@@ -89,6 +113,7 @@ QGroupBox *FinderWidget::create_controlls() {
                 displayQt->setWildcardChar(input[0]);
               }
             }
+            displayQt->searchAgain();
           });
 
 
@@ -97,16 +122,33 @@ QGroupBox *FinderWidget::create_controlls() {
   grid->addWidget(wildcardSearchBox, row, 0);
   grid->addWidget(wildcardCharInput, row++, 1);
   grid->addWidget(fuzzyTemperatureLabel, row, 0);
-  grid->addWidget(fuzzyTemperatureInput, row++, 1);
+  grid->addWidget(fuzzyTemperatureInput, row, 1);
+  grid->addWidget(fuzzyTemperatureSlider, row++, 2);
 
   QCheckBox *searchHidden = new QCheckBox("Search hidden Objects");
   QCheckBox *searchFolders = new QCheckBox("Search Folder Names");
   QCheckBox *searchFiles = new QCheckBox("Search File Names");
   QLabel *doubleClickDuration = new QLabel("Double Click Duration in MS");
   QSpinBox *doubleClickDurationInput = new QSpinBox;
+  QSlider *fdoubleClickDurationSlider = new QSlider(Qt::Horizontal);
   doubleClickDurationInput->setMinimum(200);
-  doubleClickDurationInput->setMaximum(1000);
+  doubleClickDurationInput->setMaximum(999);
+  doubleClickDurationInput->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   doubleClickDurationInput->setValue(displayQt->getDoubleClickInterval());
+  doubleClickDurationInput->setMaximumWidth(INPUT_WIDTH_EM);
+  fdoubleClickDurationSlider->setMinimum(200);
+  fdoubleClickDurationSlider->setMaximum(999);
+  fdoubleClickDurationSlider->setValue(displayQt->getDoubleClickInterval());
+  fdoubleClickDurationSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+  QObject::connect(fdoubleClickDurationSlider,
+                   &QSlider::valueChanged,
+                   doubleClickDurationInput,
+                   &QSpinBox::setValue);
+  QObject::connect(doubleClickDurationInput,
+                   QOverload<int>::of(&QSpinBox::valueChanged),
+                   fdoubleClickDurationSlider,
+                   &QSlider::setValue);
 
 
   searchHidden->setChecked(displayQt->searchHiddenObjects());
@@ -115,12 +157,15 @@ QGroupBox *FinderWidget::create_controlls() {
 
   connect(searchHidden, &QCheckBox::stateChanged, displayQt, [this](int state) {
     displayQt->setSearchHiddenObjects(state == Qt::Checked);
+    displayQt->searchAgain();
   });
   connect(searchFolders, &QCheckBox::stateChanged, displayQt, [this](int state) {
     displayQt->setSearchForFolderNames(state == Qt::Checked);
+    displayQt->searchAgain();
   });
   connect(searchFiles, &QCheckBox::stateChanged, displayQt, [this](int state) {
     displayQt->setSearchForFileNames(state == Qt::Checked);
+    displayQt->searchAgain();
   });
   connect(doubleClickDurationInput,
           QOverload<int>::of(&QSpinBox::valueChanged),
@@ -131,7 +176,8 @@ QGroupBox *FinderWidget::create_controlls() {
   grid->addWidget(searchFolders, row++, 0);
   grid->addWidget(searchFiles, row++, 0);
   grid->addWidget(doubleClickDuration, row, 0);
-  grid->addWidget(doubleClickDurationInput, row++, 1);
+  grid->addWidget(doubleClickDurationInput, row, 1);
+  grid->addWidget(fdoubleClickDurationSlider, row++, 2);
 
   controlsGroup->setLayout(grid);
   return controlsGroup;

@@ -101,6 +101,8 @@ void Display::search(const std::wstring& needel) {
                           std::placeholders::_3));
 }
 
+void Display::searchAgain() { search(last_search); }
+
 void Display::callbackSearch(bool finnished,
                              const std::vector<std::filesystem::path>& results,
                              const std::wstring& search) {

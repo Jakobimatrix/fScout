@@ -24,6 +24,7 @@ class Display : public DisplaySettings {
 
   // <SEARCH> functionallity is public for Bad Boy reinterpret_cast<come and arrestme> magic
   void search(const std::wstring&);
+  void searchAgain();
 
 
   void setUseWildcardPattern(bool use) { finder.setUseWildcardPattern(use); }
@@ -172,6 +173,8 @@ class Display : public DisplaySettings {
   void saveDisplayScale(int scale) { disp_scale = scale; }
 
   int getDisplayScale() const { return disp_scale; }
+
+  bool isReadyToSearch() const { return finder.isInitiated(); }
 
  private:
   void callbackIndexing(bool success, const std::wstring& msg);

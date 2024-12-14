@@ -28,7 +28,6 @@ class DisplayQt : public QMainWindow, public Display {
 
  private:
   void setStatus(const std::wstring &msg, int timeout = 0) override;
-  void setStatus(const QString &msg, int timeout = 0);
 
   bool askYesNoQuestion(const std::wstring &question,
                         const std::wstring &title = L"") override;

@@ -47,6 +47,8 @@ DisplayQt::DisplayQt() : Display() {
   QPixmap pixmap((path / "open.png").string().c_str());
   QIcon icon(pixmap.scaled(BASE_ICON_SIZE, BASE_ICON_SIZE, Qt::KeepAspectRatio));
   setWindowIcon(icon);
+
+  DisplayQt::setStatus(L"ready!", 0);
 }
 
 void DisplayQt::resetDisplayElements() {
@@ -244,11 +246,11 @@ void DisplayQt::saveSplitterState() {
 }
 
 void DisplayQt::setStatus(const std::wstring &msg, int timeout) {
-  statusBar()->showMessage(QString::fromStdWString(msg), timeout);
-}
+  const bool enableSearch = isReadyToSearch();
+  finder_output_widget->setDisabled(!enableSearch);
+  finder_widget->setDisabled(!enableSearch);
 
-void DisplayQt::setStatus(const QString &msg, int timeout) {
-  setStatus(msg.toStdWString(), timeout);
+  statusBar()->showMessage(QString::fromStdWString(msg), timeout);
 }
 
 void DisplayQt::about() {

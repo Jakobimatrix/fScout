@@ -17,7 +17,7 @@ void Needle::useWildCard(const wchar_t wildcard) {
 bool Needle::canDoFuzzySearch() const { return _num_fuzzy_changes > 0; }
 
 void Needle::useFuzzySeaerch() {
-  assert(currentIndex != 0);
+  assert(_num_fuzzy_changes != 0);
   --_num_fuzzy_changes;
 }
 void Needle::undo_useFuzzySeaerch() { ++_num_fuzzy_changes; }
