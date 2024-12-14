@@ -40,7 +40,11 @@ void Tree::traverse(const TreeNode *rootSubT, std::vector<TreeNode::PathInfo> &p
 
 void Tree::searchHelper(const TreeNode *nodePtr,
                         Needle &needle,
-                        std::vector<TreeNode::PathInfo> &result) const {
+                        std::vector<TreeNode::PathInfo> &result,
+                        std::atomic<bool> &stopSearch) const {
+  if (stopSearch.load()) {
+    return;
+  }
   if (needle.found()) {
     // Base case: we’ve processed all prefix characters, traverse the remaining tree
     traverse(nodePtr, result);
@@ -48,7 +52,7 @@ void Tree::searchHelper(const TreeNode *nodePtr,
   }
 
   // if the needle is longer than the remaining depth, we wont finde anything.
-  if (nodePtr->_depth < needle.getMinNecessaryDepth()) {
+  if (nodePtr->getMaxWordLength() < needle.getMinNecessaryDepth()) {
     return;
   }
 
@@ -58,35 +62,35 @@ void Tree::searchHelper(const TreeNode *nodePtr,
   // this is ok, because if needle "pictures" never gets reduced to an empty needle (see base case) results wont be written.
   // this only makes sense if the depth is big enough
   if (needle.notIncremented()) {
-    Needle copy{needle};
     for (auto it = nodePtr->_children.begin(); it != nodePtr->_children.end(); ++it) {
-      if (it->second->_depth < needle.getMinNecessaryDepth()) {
+      if (it->second->getMaxWordLength() < needle.getMinNecessaryDepth()) {
         continue;
       }
-      searchHelper(it->second, copy, result);
+      searchHelper(it->second, needle, result, stopSearch);
     }
   }
 
 
   // if we have a wild card, always use that
   if (needle.nextIsWildCard()) {
-    Needle copy{needle};
-    copy.nextIndex();
+    needle.nextIndex();
     for (const auto &child : nodePtr->_children) {
-      searchHelper(child.second, copy, result);
+      searchHelper(child.second, needle, result, stopSearch);
     }
+    needle.undo_nextIndex();
     return;
   }
 
   // if needle is "picture"
   // than search on this tree branch for p
   // and give all the "p" children the needle "icture"
-  char letter = needle.front();
+  char letter = needle.getCurrentLetter();
 
   auto it = nodePtr->_children.find(letter);
   if (it != nodePtr->_children.end()) {
     needle.nextIndex();
-    searchHelper(it->second, needle, result);
+    searchHelper(it->second, needle, result, stopSearch);
+    needle.undo_nextIndex();
     return;
   }
 
@@ -95,33 +99,29 @@ void Tree::searchHelper(const TreeNode *nodePtr,
   if (!needle.canDoFuzzySearch()) {
     return;
   }
-  Needle copySwapLetter{needle};
-  copySwapLetter.useFuzzySeaerch();
+  needle.useFuzzySeaerch();
   // this is equal to wild card
-  copySwapLetter.nextIndex();
+  needle.nextIndex();
   for (const auto &child : nodePtr->_children) {
-    searchHelper(child.second, copySwapLetter, result);
+    searchHelper(child.second, needle, result, stopSearch);
   }
 
-  Needle copyaddLetter{needle};
-  copyaddLetter.useFuzzySeaerch();
-  // add any possible letter to the search string by not incrementing the index
-  for (const auto &child : nodePtr->_children) {
-    searchHelper(child.second, copyaddLetter, result);
-  }
-
-  Needle copyremoveLetter{needle};
-  copyremoveLetter.useFuzzySeaerch();
   // remove the current letter to the search string by incrementing the index
   // and returning to the current node
-  copyremoveLetter.nextIndex();
-  searchHelper(nodePtr, copyaddLetter, result);
+  searchHelper(nodePtr, needle, result, stopSearch);
+  needle.undo_nextIndex();
+
+  // add any possible letter to the search string by not incrementing the index
+  for (const auto &child : nodePtr->_children) {
+    searchHelper(child.second, needle, result, stopSearch);
+  }
+  needle.undo_useFuzzySeaerch();
 }
 
-std::vector<TreeNode::PathInfo> Tree::search(Needle needle) const {
+std::vector<TreeNode::PathInfo> Tree::search(Needle needle, std::atomic<bool> &stopSearch) const {
   std::vector<TreeNode::PathInfo> result;
   const TreeNode *nodePtr = _root.get();
-  searchHelper(nodePtr, needle, result);
+  searchHelper(nodePtr, needle, result, stopSearch);
   return result;
 }
 
@@ -138,11 +138,11 @@ void Tree::deserialize(std::ifstream &inFile) {
 void Tree::print() const { TreeNode::print(_root.get(), "", true); }
 
 void Tree::generateDotFile(const std::string &filename) const {
-  std::ofstream file(filename);
-  file << "digraph Tree {\n";
-  file << "rankdir=\"LR\";\n";
-  file << "node [shape=circle];\n";
+  std::wofstream file(filename);
+  file << L"digraph Tree {\n";
+  file << L"rankdir=\"LR\";\n";
+  file << L"node [shape=circle];\n";
   TreeNode::print2dot(_root.get(), file);
-  file << "}\n";
+  file << L"}\n";
   file.close();
 }

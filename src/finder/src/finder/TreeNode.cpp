@@ -91,6 +91,8 @@ TreeNode* TreeNode::deserialize(std::ifstream& inFile) {
 
 bool TreeNode::isLeaf() const { return !_paths.empty(); }
 
+size_t TreeNode::getMaxWordLength() const { return _depth + 1; }
+
 
 void TreeNode::print(const TreeNode* node, const std::string& prefix, bool is_last) {
   std::string currentPrefix = prefix + (is_last ? "└" : "├");
@@ -117,16 +119,16 @@ void TreeNode::print(const TreeNode* node, const std::string& prefix, bool is_la
   }
 }
 
-void TreeNode::print2dot(const TreeNode* node, std::ofstream& file) {
+void TreeNode::print2dot(const TreeNode* node, std::wofstream& file) {
   static int nodeId = 0;  // Unique ID for each node
-  std::string currentNodeName = "N" + std::to_string(nodeId);
+  std::wstring currentNodeName = L"N" + std::to_wstring(nodeId);
   if (nodeId == 0) {
-    currentNodeName = "root";
+    currentNodeName = L"root";
   }
   ++nodeId;
 
   // Print the current node
-  file << currentNodeName << ";\n";
+  file << currentNodeName << L";\n";
 
   // For leaf nodes, print their file paths
   /*
@@ -141,10 +143,11 @@ void TreeNode::print2dot(const TreeNode* node, std::ofstream& file) {
 
   // Iterate over the children nodes
   for (const auto& child : node->_children) {
-    std::string childNodeName = "N" + std::to_string(nodeId);
+    std::wstring childNodeName = L"N" + std::to_wstring(nodeId);
 
-    file << childNodeName << " [label=\"" << child.first << "\"];\n";
-    file << currentNodeName << "->" << childNodeName << " [dir=none];\n";
+    file << childNodeName << L" [label=\"" << child.first << L" "
+         << child.second->_depth << L"\"];\n";
+    file << currentNodeName << L"->" << childNodeName << L" [dir=none];\n";
 
     print2dot(child.second, file);  // Recursive call for each child
   }

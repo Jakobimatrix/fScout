@@ -27,6 +27,8 @@ struct TreeNode {
 
   std::vector<PathInfo> _paths;
 
+  size_t getMaxWordLength() const;
+
   bool isLeaf() const;
 
   void serialize(std::ofstream& outFile) const;
@@ -34,5 +36,5 @@ struct TreeNode {
 
   static void print(const TreeNode* node, const std::string& prefix, bool is_last);
 
-  static void print2dot(const TreeNode* node, std::ofstream& file);
+  static void print2dot(const TreeNode* node, std::wofstream& file);
 };

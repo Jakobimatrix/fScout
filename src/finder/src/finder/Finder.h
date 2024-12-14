@@ -60,7 +60,12 @@ class Finder : public FinderSettings {
 
   std::wstring getIndexingDate() const;
 
-  void visualize() const { dictionary->visualize(); }
+  void visualize() const {
+    if (dictionary == nullptr) {
+      return;
+    }
+    dictionary->visualize();
+  }
 
  private:
   void setDefaultSearchExceptions();

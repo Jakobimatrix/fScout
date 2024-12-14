@@ -306,7 +306,7 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
 
     const std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults =
         dictionary->search(
-            stopWorking, needle, numFuzzyReplacements, useWildcardPattern, searchForFolderNames, searchForFileNames);
+            stopWorking, needle, numFuzzyReplacements, wildcard, searchForFolderNames, searchForFileNames);
 
 
     std::vector<std::filesystem::path> results;

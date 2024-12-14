@@ -16,25 +16,32 @@ void Needle::useWildCard(const wchar_t wildcard) {
 
 bool Needle::canDoFuzzySearch() const { return _num_fuzzy_changes > 0; }
 
-void Needle::useFuzzySeaerch(const wchar_t) { --_num_fuzzy_changes; }
-
-void Needle::useFuzzySeaerch() { --_num_fuzzy_changes; }
+void Needle::useFuzzySeaerch() {
+  assert(currentIndex != 0);
+  --_num_fuzzy_changes;
+}
+void Needle::undo_useFuzzySeaerch() { ++_num_fuzzy_changes; }
 
 
 bool Needle::nextIsWildCard() const {
   return _use_wildcard && (*_search_string)[currentIndex] == _wildcard;
 }
 
-wchar_t Needle::front() const { return (*_search_string)[currentIndex]; }
+wchar_t Needle::getCurrentLetter() const {
+  return (*_search_string)[currentIndex];
+}
 
 void Needle::nextIndex() {
   ++currentIndex;
-  assert(currentIndex < _search_string->size());
+  assert(currentIndex < _search_string->size() + 1);
 }
 
-bool Needle::found() const {
-  return currentIndex >= _search_string->size() - 1;
+void Needle::undo_nextIndex() {
+  assert(currentIndex != 0);
+  --currentIndex;
 }
+
+bool Needle::found() const { return currentIndex == _search_string->size(); }
 
 bool Needle::notIncremented() const { return currentIndex == 0; }
 

@@ -3,6 +3,7 @@
 #include <finder/Needle.h>
 #include <finder/TreeNode.h>
 
+#include <atomic>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -25,9 +26,12 @@ class Tree {
 
   void insertWord(const std::wstring &, const std::filesystem::path &, const bool);
 
-  void searchHelper(const TreeNode *nodePtr, Needle &, std::vector<TreeNode::PathInfo> &result) const;
+  void searchHelper(const TreeNode *nodePtr,
+                    Needle &,
+                    std::vector<TreeNode::PathInfo> &result,
+                    std::atomic<bool> &stopSearch) const;
 
-  std::vector<TreeNode::PathInfo> search(Needle) const;
+  std::vector<TreeNode::PathInfo> search(Needle, std::atomic<bool> &) const;
 
   void serialize(std::ofstream &outFile) const;
   void deserialize(std::ifstream &inFile);

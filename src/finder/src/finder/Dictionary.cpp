@@ -44,7 +44,7 @@ std::multimap<int, std::filesystem::path, std::greater<int>> Dictionary::search(
   if (wildcard != NO_WILDCARD) {
     n.useWildCard(wildcard);
   }
-  std::vector<TreeNode::PathInfo> matches = tree->search(n);
+  std::vector<TreeNode::PathInfo> matches = tree->search(n, stopSearch);
   std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults;
 
   for (const auto& match : matches) {
@@ -230,6 +230,9 @@ std::vector<int> Dictionary::getMatchScores(const std::wstring& searchString,
 
 void Dictionary::visualize() const {
   // tree->print();
+  if (tree == nullptr) {
+    return;
+  }
   tree->generateDotFile(
       (Globals::getInstance().getAbsPath2Resources() / "map.dot").string());
 }

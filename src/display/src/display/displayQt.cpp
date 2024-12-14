@@ -288,14 +288,13 @@ void DisplayQt::createActions() {
                          QKeySequence::Find,
                          &DisplayQt::open);
 
-  /*
+
   const auto visualizePath = (path / "visualize.png").string();
   visualizeAct = createAction(visualizePath.c_str(),
                               tr("&Visualize Dictionary..."),
                               tr("Visualize the Indexing strategy."),
                               QKeySequence::Print,
                               &DisplayQt::visualize);
-  */
 
 
   const auto exitPathPathPathPath = (path / "exit.png").string();
@@ -319,7 +318,9 @@ void DisplayQt::createMenus() {
   menuBar()->addSeparator();
 
   editMenu = menuBar()->addMenu(tr("&Edit"));
-  // editMenu->addAction(visualizeAct);
+#ifndef NDEBUG
+  editMenu->addAction(visualizeAct);
+#endif
 
   menuBar()->addSeparator();
 
@@ -333,7 +334,9 @@ void DisplayQt::createToolBars() {
   fileToolBar->setIconSize(QSize(BASE_ICON_SIZE, BASE_ICON_SIZE));
 
   editToolBar = addToolBar(tr("Edit"));
-  // editToolBar->addAction(visualizeAct);
+#ifndef NDEBUG
+  editToolBar->addAction(visualizeAct);
+#endif
   // scale chooser
   QComboBox *scaleChooser = new QComboBox(this);
   scaleChooser->addItems(getAvailableZoomLevels());

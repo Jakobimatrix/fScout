@@ -25,15 +25,15 @@ class Needle {
 
   bool canDoFuzzySearch() const;
 
-  void useFuzzySeaerch(const wchar_t);
-
   void useFuzzySeaerch();
+  void undo_useFuzzySeaerch();
 
   bool nextIsWildCard() const;
 
-  wchar_t front() const;
+  wchar_t getCurrentLetter() const;
 
   void nextIndex();
+  void undo_nextIndex();
 
   bool found() const;
 
