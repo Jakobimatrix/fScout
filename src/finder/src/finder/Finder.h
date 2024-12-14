@@ -91,6 +91,6 @@ class Finder : public FinderSettings {
   std::chrono::steady_clock::time_point indexingTime;
 
  public:
-  static constexpr float MAX_FUZZY_COEFF = 1.f;
+  static constexpr float MAX_FUZZY_COEFF = 0.5f;
   static constexpr float MIN_FUZZY_COEFF = 0.f;
 };

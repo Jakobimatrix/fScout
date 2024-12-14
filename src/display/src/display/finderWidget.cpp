@@ -58,6 +58,8 @@ QGroupBox *FinderWidget::create_controlls() {
   wildcardCharInput->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   wildcardCharInput->setText(QString(displayQt->getWildcardChar()));
 
+  constexpr int FUZZY_COEFF_STEP_SIZE = 10;
+
   QLabel *fuzzyTemperatureLabel = new QLabel("Fuzzy Search strength in %");
   QSpinBox *fuzzyTemperatureInput = new QSpinBox;
   QSlider *fuzzyTemperatureSlider = new QSlider(Qt::Horizontal);
@@ -66,10 +68,13 @@ QGroupBox *FinderWidget::create_controlls() {
   fuzzyTemperatureInput->setValue(static_cast<int>(displayQt->getFuzzyCoeff() * 100.f));
   fuzzyTemperatureInput->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   fuzzyTemperatureInput->setMaximumWidth(INPUT_WIDTH_EM);
+  fuzzyTemperatureInput->setSingleStep(FUZZY_COEFF_STEP_SIZE);
   fuzzyTemperatureSlider->setMinimum(static_cast<int>(Finder::MIN_FUZZY_COEFF * 100.f));
   fuzzyTemperatureSlider->setMaximum(static_cast<int>(Finder::MAX_FUZZY_COEFF * 100.f));
   fuzzyTemperatureSlider->setValue(static_cast<int>(displayQt->getFuzzyCoeff() * 100.f));
   fuzzyTemperatureSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  fuzzyTemperatureSlider->setTickInterval(FUZZY_COEFF_STEP_SIZE);
+  fuzzyTemperatureSlider->setSingleStep(FUZZY_COEFF_STEP_SIZE);
 
 
   wildcardSearchBox->setChecked(displayQt->usesWildcardPattern());
@@ -87,8 +92,16 @@ QGroupBox *FinderWidget::create_controlls() {
             displayQt->searchAgain();
           });
 
-  QObject::connect(
-      fuzzyTemperatureSlider, &QSlider::valueChanged, fuzzyTemperatureInput, &QSpinBox::setValue);
+  QObject::connect(fuzzyTemperatureSlider,
+                   &QSlider::valueChanged,
+                   fuzzyTemperatureInput,
+                   [fuzzyTemperatureInput](int value) {
+                     if (value % FUZZY_COEFF_STEP_SIZE != 0) {
+                       return;
+                     }
+                     fuzzyTemperatureInput->setValue(value);
+                   });
+
   QObject::connect(fuzzyTemperatureInput,
                    QOverload<int>::of(&QSpinBox::valueChanged),
                    fuzzyTemperatureSlider,
