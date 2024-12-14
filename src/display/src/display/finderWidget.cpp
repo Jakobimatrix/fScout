@@ -32,6 +32,7 @@ QGroupBox *FinderWidget::create_info() {
   QFormLayout *formLayout = new QFormLayout(this);
 
   formLayout->addRow(new QLabel("Root Path:"), rootPathLabel);
+  rootPathLabel->setWordWrap(true);
   formLayout->addRow(new QLabel("Files Found:"), filesFoundLabel);
   formLayout->addRow(new QLabel("Indexing Date:"), indexingDate);
 
@@ -157,7 +158,11 @@ void FinderWidget::updateInfo(const std::wstring &root_path,
   }
 
   // Update UI labels in the main thread
-  rootPathLabel->setText(QString("Root Path: %1").arg(QString::fromStdWString(root_path)));
+  // Enable breaking on slashes using the "zero-width space" hint
+  QString pathStr = QString::fromStdWString(root_path);
+  pathStr.replace("/", "/\u200B");  // Insert zero-width space after each '/'
+  rootPathLabel->setText(QString("Root Path: %1").arg(pathStr));
+  // rootPathLabel->setText(QString("Root Path: %1").arg(QString::fromStdWString(root_path)));
   filesFoundLabel->setText(QString("Files Found: %1").arg(QString::number(num_files)));
   indexingDate->setText(QString::fromStdWString(indexing_date));
 }

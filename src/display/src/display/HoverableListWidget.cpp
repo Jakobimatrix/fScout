@@ -82,6 +82,8 @@ void HoverableListWidget::leaveEvent(QEvent *event) {
 void HoverableListWidget::resizeEvent(QResizeEvent *event) {
   QListWidget::resizeEvent(event);
 
+  setUpdatesEnabled(false);
+
   // Recalculate ellipses for all items based on the new size
   for (int i = 0; i < count(); ++i) {
     QListWidgetItem *item = this->item(i);
@@ -90,6 +92,9 @@ void HoverableListWidget::resizeEvent(QResizeEvent *event) {
         entries[i].rightPathPartWithHtml;
     item->setText(fullPath);
   }
+
+  setUpdatesEnabled(true);
+  viewport()->update();
 }
 
 int HoverableListWidget::getWordWidth(const QString &word) const {
