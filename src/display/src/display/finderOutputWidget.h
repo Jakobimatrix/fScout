@@ -8,6 +8,7 @@
 #include <QObject>
 #include <QTextEdit>
 #include <QWidget>
+#include <atomic>
 #include <filesystem>
 #include <functional>
 
@@ -36,4 +37,6 @@ class FinderOutputWidget : public QWidget {
   QGroupBox *create_resultField();
   HoverableListWidget *resultList;
   DisplayQt *displayQt;
+
+  std::atomic<int> numQueuedProcesses = 0;
 };

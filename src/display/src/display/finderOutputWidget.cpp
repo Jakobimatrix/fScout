@@ -61,17 +61,22 @@ QGroupBox *FinderOutputWidget::create_resultField() {
 
 void FinderOutputWidget::setSearchResults(const std::vector<std::filesystem::path> &searchResults,
                                           const std::wstring &search) {
+
   if (QThread::currentThread() != this->thread()) {
     auto searchResultsCopy = searchResults;  // make a copy
     auto searchCopy = search;                // make a copy
+    numQueuedProcesses.fetch_add(1);
     QMetaObject::invokeMethod(
         this,
         [this, searchResultsCopy, searchCopy]() {
+          numQueuedProcesses.fetch_sub(1);
           setSearchResults(searchResultsCopy, searchCopy);
         },
         Qt::QueuedConnection);
     return;
   }
+
+  // this will always be executed by QThread main. So no multithreading problems here.
 
   resultList->clear();
 
@@ -91,11 +96,12 @@ void FinderOutputWidget::setSearchResults(const std::vector<std::filesystem::pat
 
   resultList->setUpdatesEnabled(true);  // Enable updates for the first batch
   resultList->viewport()->update();     // Force repaint
-
-  QCoreApplication::processEvents(QEventLoop::AllEvents, 30);
-
+  // QCoreApplication::processEvents(QEventLoop::AllEvents, 30);
   resultList->setUpdatesEnabled(false);
   for (; i < totalResults; ++i) {
+    if (numQueuedProcesses.load() > 0) {
+      return;
+    }
     resultList->addSearchResultItem(searchResults[i], search);
   }
 
@@ -103,7 +109,14 @@ void FinderOutputWidget::setSearchResults(const std::vector<std::filesystem::pat
   resultList->viewport()->update();     // Force repaint
 }
 
-void FinderOutputWidget::reset() { resultList->clear(); }
+void FinderOutputWidget::reset() {
+  if (QThread::currentThread() != this->thread()) {
+    QMetaObject::invokeMethod(
+        this, [this]() { reset(); }, Qt::QueuedConnection);
+    return;
+  }
+  resultList->clear();
+}
 
 void FinderOutputWidget::changeScale(const double scaleFactor) {
   resultList->changeScale(scaleFactor);

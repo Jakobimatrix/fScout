@@ -118,20 +118,20 @@ void Tree::searchHelper(const TreeNode *nodePtr,
   needle.undo_useFuzzySeaerch();
 }
 
-std::vector<TreeNode::PathInfo> Tree::search(Needle needle, std::atomic<bool> &stopSearch) const {
-  std::vector<TreeNode::PathInfo> result;
+void Tree::search(Needle needle,
+                  std::atomic<bool> &stopSearch,
+                  std::vector<TreeNode::PathInfo> &matches) const {
   const TreeNode *nodePtr = _root.get();
-  searchHelper(nodePtr, needle, result, stopSearch);
-  return result;
+  searchHelper(nodePtr, needle, matches, stopSearch);
 }
 
 size_t Tree::getMaxEntryLength() const { return _root->_depth; }
 
-void Tree::serialize(std::ofstream &outFile) const {
+void Tree::serialize(std::wofstream &outFile) const {
   _root->serialize(outFile);
 }
 
-void Tree::deserialize(std::ifstream &inFile) {
+void Tree::deserialize(std::wifstream &inFile) {
   _root = std::unique_ptr<TreeNode>(TreeNode::deserialize(inFile));
 }
 

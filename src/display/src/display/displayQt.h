@@ -60,6 +60,7 @@ class DisplayQt : public QMainWindow, public Display {
   void about();
   void open();
   void close();
+  void save();
   void visualize();
 
  private:
@@ -84,6 +85,7 @@ class DisplayQt : public QMainWindow, public Display {
   QAction *exitAct;
   QAction *aboutAct;
   QAction *visualizeAct;
+  QAction *saveIndexAct;
 
   FinderWidget *finder_widget;
   FinderOutputWidget *finder_output_widget;

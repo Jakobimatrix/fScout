@@ -16,23 +16,21 @@ class Dictionary {
   void addPath(const std::filesystem::path &, const bool);
 
 
-  std::multimap<int, std::filesystem::path, std::greater<int>> search(
-      std::atomic<bool> &stopSearch,
-      const std::wstring &needle_in,
-      const size_t num_fuzzy_replacements,
-      const wchar_t wildcard,
-      const bool searchDirectories,
-      const bool searchFiles) const;
+  void search(std::atomic<bool> &stopSearch,
+              const std::wstring &needle_in,
+              const size_t num_fuzzy_replacements,
+              const wchar_t wildcard,
+              std::vector<TreeNode::PathInfo> &matches) const;
 
-  void serialize(const std::string &filename,
+  void serialize(const std::filesystem::path &filename,
                  const std::chrono::steady_clock::time_point &timeOfIndexing) const;
-  void deserialize(const std::string &filename,
+  void deserialize(const std::filesystem::path &filename,
                    std::chrono::steady_clock::time_point *timeOfIndexing);
 
-  void setMinSearchSize(size_t size) { min_search_size = size; }
-  size_t getMinSearchSize() const { return min_search_size; }
 
   void visualize() const;
+
+  size_t getSize() const { return size; }
 
   static int scoreChars(wchar_t a, wchar_t b);
   static int scoreMatch(const std::wstring &needle, const std::wstring &match);
@@ -41,5 +39,5 @@ class Dictionary {
 
  private:
   std::unique_ptr<Tree> tree;
-  size_t min_search_size = 3;
+  size_t size = 0;
 };

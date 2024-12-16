@@ -74,13 +74,11 @@ class Globals {
   }
 
 
-  const std::string& getBinaryTreeFromatIdentifier() const {
+  const std::wstring& getBinaryTreeFromatIdentifier() const {
     return BINARY_FORMAT_IDENTIFIER;
   }
 
-  const std::string& getBinaryFilePostFix() const {
-    return BINARY_FILE_POSTFIX;
-  }
+  const std::wstring& getBinaryFileIndex() const { return BINARY_FILE_INDEX; }
 
   const std::string& getMainWindowName() const { return MAIN_WINDOW_NAME; }
 
@@ -118,6 +116,6 @@ class Globals {
   // Strings
   const std::string MAIN_WINDOW_NAME = std::string("fScout");
   const std::string VERSION_NAME = std::string("Abyssinian");
-  const std::string BINARY_FORMAT_IDENTIFIER = std::string("8008135-fScout");
-  const std::string BINARY_FILE_POSTFIX = std::string(".index");
+  const std::wstring BINARY_FORMAT_IDENTIFIER = std::wstring(L"8008135-fScout");
+  const std::wstring BINARY_FILE_INDEX = std::wstring(L"fScout.index");
 };

@@ -31,8 +31,8 @@ struct TreeNode {
 
   bool isLeaf() const;
 
-  void serialize(std::ofstream& outFile) const;
-  static TreeNode* deserialize(std::ifstream& inFile);
+  void serialize(std::wofstream& outFile) const;
+  static TreeNode* deserialize(std::wifstream& inFile);
 
   static void print(const TreeNode* node, const std::string& prefix, bool is_last);
 

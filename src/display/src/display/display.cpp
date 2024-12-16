@@ -32,6 +32,13 @@ void Display::save() {
   // go into cache folder
   // create all folders like the root path
   // in the last folder save the current index
+  if (!finder.saveCurrentIndex(finder.getRootFolder() /
+                               Globals::getInstance().getBinaryFileIndex())) {
+    std::wstring msg(
+        L"Failed to save index to " +
+        (finder.getRootFolder() / Globals::getInstance().getBinaryFileIndex()).wstring());
+    popup_error(msg, L"Error Saveing");
+  }
 }
 
 

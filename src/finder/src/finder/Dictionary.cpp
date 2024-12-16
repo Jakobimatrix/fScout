@@ -22,16 +22,15 @@ void Dictionary::addPath(const std::filesystem::path& path, const bool isDirecto
   // The scoring function at the end will score exact matches better than case insensitive matches.
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);
   tree->insertWord(name, path, isDirectory);
+  ++size;
 }
 
 
-std::multimap<int, std::filesystem::path, std::greater<int>> Dictionary::search(
-    std::atomic<bool>& stopSearch,
-    const std::wstring& needle_in,
-    const size_t num_fuzzy_replacements,
-    const wchar_t wildcard,
-    const bool searchDirectories,
-    const bool searchFiles) const {
+void Dictionary::search(std::atomic<bool>& stopSearch,
+                        const std::wstring& needle_in,
+                        const size_t num_fuzzy_replacements,
+                        const wchar_t wildcard,
+                        std::vector<TreeNode::PathInfo>& matches) const {
 
   // to save storage and computation time, we save everything lower case.
   // The scoring function at the end will score exact matches better than case insensitive matches.
@@ -44,70 +43,58 @@ std::multimap<int, std::filesystem::path, std::greater<int>> Dictionary::search(
   if (wildcard != NO_WILDCARD) {
     n.useWildCard(wildcard);
   }
-  std::vector<TreeNode::PathInfo> matches = tree->search(n, stopSearch);
-  std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults;
-
-  for (const auto& match : matches) {
-    if (stopSearch.load()) {
-      return scoredResults;
-    }
-    if (match.isDirectory && searchDirectories || !match.isDirectory && searchFiles) {
-      scoredResults.emplace(
-          scoreMatch(needle_in, util::getLastPathComponent(match.path)), match.path);
-    }
-  }
-  return scoredResults;
+  tree->search(n, stopSearch, matches);
 }
 
 
-void Dictionary::serialize(const std::string& filename,
+void Dictionary::serialize(const std::filesystem::path& filename,
                            const std::chrono::steady_clock::time_point& timeOfIndexing) const {
-  std::ofstream outFile(filename, std::ios::binary);
+  std::wofstream outFile(filename, std::ios::binary);
 
   if (!outFile.is_open()) {
     throw std::runtime_error("Could not open file for serialization");
   }
 
   // Write the global header: identifier, version, and indexing time
-  const std::string identifier = Globals::getInstance().getBinaryTreeFromatIdentifier();
+  const std::wstring identifier = Globals::getInstance().getBinaryTreeFromatIdentifier();
   constexpr uint32_t version = Globals::VERSION;
   outFile.write(identifier.c_str(), identifier.size());
-  outFile.write(reinterpret_cast<const char*>(&version), sizeof(version));
+  outFile.write(reinterpret_cast<const wchar_t*>(&version), sizeof(version));
 
   // Serialize the timeOfIndexing (as seconds since epoch)
   auto timeSinceEpoch =
       std::chrono::duration_cast<std::chrono::seconds>(timeOfIndexing.time_since_epoch())
           .count();
-  outFile.write(reinterpret_cast<const char*>(&timeSinceEpoch), sizeof(timeSinceEpoch));
+  outFile.write(reinterpret_cast<const wchar_t*>(&timeSinceEpoch), sizeof(timeSinceEpoch));
 
   tree->serialize(outFile);
 
   outFile.close();
 }
 
-void Dictionary::deserialize(const std::string& filename,
+void Dictionary::deserialize(const std::filesystem::path& filename,
                              std::chrono::steady_clock::time_point* timeOfIndexing) {
-  std::ifstream inFile(filename, std::ios::binary);
+  std::wifstream inFile(filename, std::ios::binary);
 
   if (!inFile.is_open()) {
     throw std::runtime_error("Could not open file for deserialization");
   }
 
   // Read the global header: identifier, version, and indexing time
-  const std::string identifier = Globals::getInstance().getBinaryTreeFromatIdentifier();
-  char identifierBuffer[identifier.size()];
+  const std::wstring identifier = Globals::getInstance().getBinaryTreeFromatIdentifier();
+  wchar_t identifierBuffer[identifier.size()];
   uint32_t version = 0;
 
   inFile.read(identifierBuffer, identifier.size());
 
   // Check if the identifier matches
-  if (std::string(identifierBuffer, identifier.size()) != identifier) {
+  if (std::wstring(identifierBuffer, identifier.size()) != identifier) {
     throw std::runtime_error(
         "File identifier does not match. This file may not be serialized by "
         "this program.");
   }
 
-  inFile.read(reinterpret_cast<char*>(&version), sizeof(version));
+  inFile.read(reinterpret_cast<wchar_t*>(&version), sizeof(version));
 
   // Handle different versions if needed (for now we assume version 1)
   if (version != Globals::VERSION) {
@@ -116,7 +103,7 @@ void Dictionary::deserialize(const std::string& filename,
 
   // Deserialize the timeOfIndexing (as seconds since epoch)
   std::time_t timeSinceEpoch;
-  inFile.read(reinterpret_cast<char*>(&timeSinceEpoch), sizeof(timeSinceEpoch));
+  inFile.read(reinterpret_cast<wchar_t*>(&timeSinceEpoch), sizeof(timeSinceEpoch));
   *timeOfIndexing =
       std::chrono::steady_clock::time_point(std::chrono::seconds(timeSinceEpoch));
 

@@ -83,7 +83,6 @@ void HoverableListWidget::resizeEvent(QResizeEvent *event) {
   QListWidget::resizeEvent(event);
 
   setUpdatesEnabled(false);
-
   // Recalculate ellipses for all items based on the new size
   for (int i = 0; i < count(); ++i) {
     QListWidgetItem *item = this->item(i);

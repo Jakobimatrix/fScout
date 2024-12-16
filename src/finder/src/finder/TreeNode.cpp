@@ -4,71 +4,72 @@
 #include <iostream>
 
 
-void TreeNode::serialize(std::ofstream& outFile) const {
+void TreeNode::serialize(std::wofstream& outFile) const {
   // Serialize leaf status
-  outFile.write(reinterpret_cast<const char*>(&_depth), sizeof(_depth));
+  outFile.write(reinterpret_cast<const wchar_t*>(&_depth), sizeof(_depth));
   bool is_leaf = isLeaf();
-  outFile.write(reinterpret_cast<const char*>(&is_leaf), sizeof(is_leaf));
+  outFile.write(reinterpret_cast<const wchar_t*>(&is_leaf), sizeof(is_leaf));
 
   if (is_leaf) {
     // Serialize the size of the paths vector
     size_t pathsCount = _paths.size();
-    outFile.write(reinterpret_cast<const char*>(&pathsCount), sizeof(pathsCount));
+    outFile.write(reinterpret_cast<const wchar_t*>(&pathsCount), sizeof(pathsCount));
 
     // Serialize each path as a string
     for (const auto& path : _paths) {
-      std::string pathString = path.path.string();
+      std::wstring pathString = path.path.wstring();
       size_t pathLength = pathString.size();
 
       // Write the length of the string
-      outFile.write(reinterpret_cast<const char*>(&pathLength), sizeof(pathLength));
+      outFile.write(reinterpret_cast<const wchar_t*>(&pathLength), sizeof(pathLength));
 
       // Write the string itself
       outFile.write(pathString.c_str(), pathLength);
 
-      const char isDirectory = path.isDirectory ? '1' : '0';
+      const wchar_t isDirectory = path.isDirectory ? '1' : '0';
       outFile.write(&isDirectory, sizeof(isDirectory));
     }
   }
 
   // Serialize number of children
   size_t childrenCount = _children.size();
-  outFile.write(reinterpret_cast<const char*>(&childrenCount), sizeof(childrenCount));
+  outFile.write(reinterpret_cast<const wchar_t*>(&childrenCount), sizeof(childrenCount));
 
   // Serialize each child node
   for (const auto& child : _children) {
 
-    outFile.write(reinterpret_cast<const char*>(&child.first), sizeof(child.first));  // Write the character key
-    child.second->serialize(outFile);  // Recursively serialize child node
+    outFile.write(reinterpret_cast<const wchar_t*>(&child.first),
+                  sizeof(child.first));  // Write the character key
+    child.second->serialize(outFile);    // Recursively serialize child node
   }
 }
 
-TreeNode* TreeNode::deserialize(std::ifstream& inFile) {
+TreeNode* TreeNode::deserialize(std::wifstream& inFile) {
   auto* node = new TreeNode(0);
 
   // Read leaf status
-  inFile.read(reinterpret_cast<char*>(&node->_depth), sizeof(node->_depth));
+  inFile.read(reinterpret_cast<wchar_t*>(&node->_depth), sizeof(node->_depth));
   bool is_leaf;
-  inFile.read(reinterpret_cast<char*>(&is_leaf), sizeof(is_leaf));
+  inFile.read(reinterpret_cast<wchar_t*>(&is_leaf), sizeof(is_leaf));
 
   if (is_leaf) {
     // Read the size of the paths vector
     size_t pathsCount;
-    inFile.read(reinterpret_cast<char*>(&pathsCount), sizeof(pathsCount));
+    inFile.read(reinterpret_cast<wchar_t*>(&pathsCount), sizeof(pathsCount));
 
     // Read each path
     for (size_t i = 0; i < pathsCount; ++i) {
       // Read the length of the path string
       size_t pathLength;
-      inFile.read(reinterpret_cast<char*>(&pathLength), sizeof(pathLength));
+      inFile.read(reinterpret_cast<wchar_t*>(&pathLength), sizeof(pathLength));
 
       // Read the string itself
-      std::string pathString(pathLength, '\0');
+      std::wstring pathString(pathLength, L'\0');
       inFile.read(&pathString[0], pathLength);
 
-      char isDirChar;
+      wchar_t isDirChar;
       inFile.read(&isDirChar, sizeof(isDirChar));
-      bool isDir = isDirChar == 1 ? true : false;
+      bool isDir = isDirChar == L'1' ? true : false;
 
       // Convert the Info to a TreeNode::PathInfo and add to the vector
       node->_paths.emplace_back(pathString, isDir);
@@ -77,11 +78,11 @@ TreeNode* TreeNode::deserialize(std::ifstream& inFile) {
 
   // Read number of children
   size_t childrenCount;
-  inFile.read(reinterpret_cast<char*>(&childrenCount), sizeof(childrenCount));
+  inFile.read(reinterpret_cast<wchar_t*>(&childrenCount), sizeof(childrenCount));
 
   // Read each child node
   for (size_t i = 0; i < childrenCount; ++i) {
-    char letter;
+    wchar_t letter;
     inFile.read(&letter, sizeof(letter));           // Read the character key
     node->_children[letter] = deserialize(inFile);  // Recursively deserialize child node
   }

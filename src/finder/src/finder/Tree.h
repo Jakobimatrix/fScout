@@ -31,10 +31,10 @@ class Tree {
                     std::vector<TreeNode::PathInfo> &result,
                     std::atomic<bool> &stopSearch) const;
 
-  std::vector<TreeNode::PathInfo> search(Needle, std::atomic<bool> &) const;
+  void search(Needle, std::atomic<bool> &, std::vector<TreeNode::PathInfo> &matches) const;
 
-  void serialize(std::ofstream &outFile) const;
-  void deserialize(std::ifstream &inFile);
+  void serialize(std::wofstream &outFile) const;
+  void deserialize(std::wifstream &inFile);
 
   void print() const;
   void generateDotFile(const std::string &filename) const;

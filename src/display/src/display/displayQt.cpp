@@ -108,6 +108,7 @@ const int DisplayQt::getCurrentZoomLevelIndex(int currentZoom) {
 }
 
 void DisplayQt::close() { QMainWindow::close(); }
+void DisplayQt::save() { Display::save(); }
 
 void DisplayQt::closeEvent(QCloseEvent *event) {
   if (!exitGracefully()) {
@@ -283,28 +284,29 @@ void DisplayQt::createActions() {
   };
 
   // Create actions
-  const auto openPath = (path / "open.png").string();
-  openAct = createAction(openPath.c_str(),
+  const auto openPath = QString::fromStdWString((path / L"open.png").wstring());
+  openAct = createAction(openPath,
                          tr("&Open Folder..."),
                          tr("Open the base of your search."),
                          QKeySequence::Find,
                          &DisplayQt::open);
 
 
-  const auto visualizePath = (path / "visualize.png").string();
-  visualizeAct = createAction(visualizePath.c_str(),
+  const auto visualizePath =
+      QString::fromStdWString((path / L"visualize.png").wstring());
+  visualizeAct = createAction(visualizePath,
                               tr("&Visualize Dictionary..."),
                               tr("Visualize the Indexing strategy."),
                               QKeySequence::Print,
                               &DisplayQt::visualize);
 
+  const auto exitPath = QString::fromStdWString((path / L"exit.png").wstring());
+  exitAct = createAction(
+      exitPath, tr("&Exit"), tr("Close the program."), QKeySequence::Close, &DisplayQt::close);
 
-  const auto exitPathPathPathPath = (path / "exit.png").string();
-  exitAct = createAction(exitPathPathPathPath.c_str(),
-                         tr("&Exit"),
-                         tr("Close the program."),
-                         QKeySequence::Close,
-                         &DisplayQt::close);
+  const auto savePath = QString::fromStdWString((path / L"save.png").wstring());
+  saveIndexAct = createAction(
+      savePath, tr("&Save"), tr("Save current Index."), QKeySequence::Save, &DisplayQt::save);
 
   aboutAct = new QAction(tr("About &Finder"), this);
   aboutAct->setStatusTip(tr("Show the Finders's About box."));
@@ -323,6 +325,7 @@ void DisplayQt::createMenus() {
 #ifndef NDEBUG
   editMenu->addAction(visualizeAct);
 #endif
+  // editMenu->addAction(saveIndexAct);
 
   menuBar()->addSeparator();
 
@@ -333,6 +336,7 @@ void DisplayQt::createMenus() {
 void DisplayQt::createToolBars() {
   fileToolBar = addToolBar(tr("File"));
   fileToolBar->addAction(openAct);
+  // fileToolBar->addAction(saveIndexAct);
   fileToolBar->setIconSize(QSize(BASE_ICON_SIZE, BASE_ICON_SIZE));
 
   editToolBar = addToolBar(tr("Edit"));

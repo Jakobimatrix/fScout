@@ -265,7 +265,7 @@ bool Finder::saveCurrentIndex(const std::filesystem::path& filePath) {
   }
 
   try {
-    dictionary->serialize(filePath.string(), indexingTime);  // Use Dictionary serialization
+    dictionary->serialize(filePath, indexingTime);  // Use Dictionary serialization
     return true;
   } catch (const std::exception& e) {
     std::cerr << "Failed to save index: " << e.what() << std::endl;
@@ -281,7 +281,7 @@ bool Finder::loadIndexFromFile(const std::filesystem::path& filePath) {
 
   try {
     dictionary = std::make_unique<Dictionary>();
-    dictionary->deserialize(filePath.string(), &indexingTime);  // Use Dictionary deserialization
+    dictionary->deserialize(filePath, &indexingTime);  // Use Dictionary deserialization
     fullyIndexed = true;
     return true;
   } catch (const std::exception& e) {
@@ -297,33 +297,89 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
     callback(true, {}, needle);
     return;
   }
+  constexpr size_t DYNAMIC_LOAD_THRESHOLD = 512;
+  constexpr size_t VECTOR_RESERVE_SIZE = 2048;
   stopCurrentWorker();
   workerThread = std::make_unique<std::thread>([this, callback, needle]() {
-    wchar_t wildcard{useWildcardPattern ? wildcard : Dictionary::NO_WILDCARD};
+    std::vector<TreeNode::PathInfo> matches;
 
+    matches.reserve(VECTOR_RESERVE_SIZE);
+    bool finnished = false;
+
+    auto collector = std::make_unique<std::thread>([this, &callback, &needle, &matches, &finnished]() {
+      size_t num_send_matches = 0;
+      std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults;
+
+      auto sendResults = [&scoredResults, &needle, &callback](const bool finished) {
+        std::vector<std::filesystem::path> results;
+        const int maxScore = scoredResults.begin()->first;
+        const int threshold = maxScore - needle.size();
+        std::set<std::filesystem::path> seenPaths;
+        for (auto it = scoredResults.begin(); it != scoredResults.end(); ++it) {
+          const auto& [score, path] = *it;
+          if (score < threshold) {
+            break;
+          }
+          // If the path has not been added yet, insert it into the result
+          if (seenPaths.insert(path).second) {
+            results.push_back(path);
+          }
+        }
+        callback(finished, results, needle);
+      };
+
+      auto holdDynamicLoading = [this, &matches, &finnished]() {
+        if (DYNAMIC_LOAD_THRESHOLD > matches.size()) {
+          return;
+        }
+        while (!finnished && !stopWorking.load()) {
+          using namespace std::chrono_literals;
+          std::this_thread::sleep_for(50ms);
+        }
+      };
+
+      bool alreadyFinnished = false;
+      size_t new_size = 0;
+      while (!finnished || new_size == matches.size()) {
+        if (stopWorking.load()) {
+          break;
+        }
+        new_size = matches.size();
+
+        for (; num_send_matches < new_size; ++num_send_matches) {
+          if (stopWorking.load()) {
+            break;
+          }
+          holdDynamicLoading();
+          // copy! in case std vector relocates on resize
+          // this could crash if the vector gets relocated while copying.
+          // hopefully holdDynamicLoading will prevent this!
+          // we could also implement a thread save vector...
+          TreeNode::PathInfo match = matches[num_send_matches];
+          if (match.isDirectory && searchForFolderNames ||
+              !match.isDirectory && searchForFileNames) {
+            scoredResults.emplace(
+                Dictionary::scoreMatch(needle, util::getLastPathComponent(match.path)),
+                match.path);
+          }
+        }
+        alreadyFinnished = finnished && new_size == matches.size();
+        sendResults(finnished);
+      }
+      if (!alreadyFinnished) {
+        sendResults(true);
+      }
+    });
+
+    wchar_t wildcard{useWildcardPattern ? wildcard : Dictionary::NO_WILDCARD};
     const size_t numFuzzyReplacements =
         static_cast<size_t>(std::round(fuzzyCoefficient * needle.size()));
-
-    const std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults =
-        dictionary->search(
-            stopWorking, needle, numFuzzyReplacements, wildcard, searchForFolderNames, searchForFileNames);
-
-
-    std::vector<std::filesystem::path> results;
-    const int maxScore = scoredResults.begin()->first;
-    const int threshold = maxScore - needle.size();
-    std::set<std::filesystem::path> seenPaths;
-    for (auto it = scoredResults.begin(); it != scoredResults.end(); ++it) {
-      const auto& [score, path] = *it;
-      if (score < threshold) {
-        break;
-      }
-      // If the path has not been added yet, insert it into the result
-      if (seenPaths.insert(path).second) {
-        results.push_back(path);
-      }
+    dictionary->search(stopWorking, needle, numFuzzyReplacements, wildcard, matches);
+    finnished = true;
+    if (collector && collector->joinable()) {
+      collector->join();
+      collector.reset();
     }
-    callback(true, results, needle);
   });
 }
 
