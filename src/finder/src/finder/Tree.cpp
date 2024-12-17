@@ -75,6 +75,9 @@ void Tree::searchHelper(const TreeNode *nodePtr,
   if (needle.nextIsWildCard()) {
     needle.nextIndex();
     for (const auto &child : nodePtr->_children) {
+      if (child.second->getMaxWordLength() < needle.getMinNecessaryDepth()) {
+        continue;
+      }
       searchHelper(child.second, needle, result, stopSearch);
     }
     needle.undo_nextIndex();
@@ -83,7 +86,7 @@ void Tree::searchHelper(const TreeNode *nodePtr,
 
   // if needle is "picture"
   // than search on this tree branch for p
-  // and give all the "p" children the needle "icture"
+  // and give the "p" child the needle "icture"
   char letter = needle.getCurrentLetter();
 
   auto it = nodePtr->_children.find(letter);
@@ -103,6 +106,9 @@ void Tree::searchHelper(const TreeNode *nodePtr,
   // this is equal to wild card
   needle.nextIndex();
   for (const auto &child : nodePtr->_children) {
+    if (child.second->getMaxWordLength() < needle.getMinNecessaryDepth()) {
+      continue;
+    }
     searchHelper(child.second, needle, result, stopSearch);
   }
 
@@ -113,6 +119,9 @@ void Tree::searchHelper(const TreeNode *nodePtr,
 
   // add any possible letter to the search string by not incrementing the index
   for (const auto &child : nodePtr->_children) {
+    if (child.second->getMaxWordLength() < needle.getMinNecessaryDepth()) {
+      continue;
+    }
     searchHelper(child.second, needle, result, stopSearch);
   }
   needle.undo_useFuzzySeaerch();

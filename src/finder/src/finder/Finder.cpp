@@ -325,6 +325,9 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
             results.push_back(path);
           }
         }
+        std::cout << "found: " << scoredResults.size()
+                  << " unique: " << seenPaths.size()
+                  << " send: " << results.size() << std::endl;
         callback(finished, results, needle);
       };
 
@@ -338,9 +341,9 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
         }
       };
 
-      bool alreadyFinnished = false;
+      bool searchFinnishedAndAllSend = false;
       size_t new_size = 0;
-      while (!finnished || new_size == matches.size()) {
+      while (!searchFinnishedAndAllSend) {
         if (stopWorking.load()) {
           break;
         }
@@ -363,11 +366,10 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
                 match.path);
           }
         }
-        alreadyFinnished = finnished && new_size == matches.size();
-        sendResults(finnished);
-      }
-      if (!alreadyFinnished) {
-        sendResults(true);
+        searchFinnishedAndAllSend = finnished && new_size == matches.size();
+        if (new_size > 0 || searchFinnishedAndAllSend) {
+          sendResults(searchFinnishedAndAllSend);
+        }
       }
     });
 
