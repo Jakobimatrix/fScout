@@ -312,12 +312,13 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
 
       auto sendResults = [&scoredResults, &needle, &callback](const bool finished) {
         std::vector<std::filesystem::path> results;
+        results.reserve(scoredResults.size());
         const int maxScore = scoredResults.begin()->first;
         const int threshold = maxScore - needle.size();
         std::set<std::filesystem::path> seenPaths;
         for (auto it = scoredResults.begin(); it != scoredResults.end(); ++it) {
           const auto& [score, path] = *it;
-          if (score < threshold) {
+          if (score < threshold || !finished && results.size() > 20) {
             break;
           }
           // If the path has not been added yet, insert it into the result
@@ -334,16 +335,17 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
 
       auto holdDynamicLoading = [this, &matches, &finnished]() {
         if (DYNAMIC_LOAD_THRESHOLD > matches.size()) {
-          return;
+          return;  // dont peak into the vector which is shared between 2 treads, since it can be relocated now.
         }
         while (!finnished && !stopWorking.load()) {
           using namespace std::chrono_literals;
-          std::this_thread::sleep_for(50ms);
+          std::this_thread::sleep_for(100ms);
         }
       };
 
       bool searchFinnishedAndAllSend = false;
       size_t new_size = 0;
+      size_t old_size = 0;
       while (!searchFinnishedAndAllSend) {
         if (stopWorking.load()) {
           break;
@@ -368,15 +370,21 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
           }
         }
         searchFinnishedAndAllSend = finnished && new_size == matches.size();
-        if (new_size > 0 || searchFinnishedAndAllSend) {
+        if (new_size > old_size || searchFinnishedAndAllSend) {
+          old_size = new_size;
           sendResults(searchFinnishedAndAllSend);
         }
       }
     });
 
     wchar_t wildcardChar{useWildcardPattern ? wildcard : Dictionary::NO_WILDCARD};
+
+    const size_t numFuzzyReplacements = std::min(
+        2ul, static_cast<size_t>(std::round(fuzzyCoefficient * needle.size())));
+
+    /*
     const size_t numFuzzyReplacements =
-        static_cast<size_t>(std::round(fuzzyCoefficient * needle.size()));
+        static_cast<size_t>(std::round(fuzzyCoefficient * needle.size()));*/
     Timer tSearch;
     tSearch.start();
     dictionary->search(stopWorking, needle, numFuzzyReplacements, wildcardChar, matches);

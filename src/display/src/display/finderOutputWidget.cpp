@@ -79,36 +79,20 @@ void FinderOutputWidget::setSearchResults(const std::vector<std::filesystem::pat
 
   // this will always be executed by QThread main. So no multithreading problems here.
 
-  resultList->clear();
-
-  // paint the first 20 which are visible, paint the rest later.
 
   resultList->setUpdatesEnabled(false);  // Disable updates temporarily
   resultList->setDisabled(true);
+  resultList->clear();
 
-  constexpr int initialBatchSize = 20;
-
-  int totalResults = searchResults.size();
-  int firstBatchCount = std::min(initialBatchSize, totalResults);
-
-  int i = 0;
-  for (; i < firstBatchCount; ++i) {
-    resultList->addSearchResultItem(searchResults[i], search);
-  }
-
-  resultList->setUpdatesEnabled(true);  // Enable updates for the first batch
-  resultList->viewport()->update();     // Force repaint
-  // QCoreApplication::processEvents(QEventLoop::AllEvents, 30);
-  resultList->setUpdatesEnabled(false);
-  for (; i < totalResults; ++i) {
+  for (const auto &result : searchResults) {
     if (numQueuedProcesses.load() > 0) {
       return;
     }
-    resultList->addSearchResultItem(searchResults[i], search);
+    resultList->addSearchResultItem(result, search);
   }
 
-  resultList->setUpdatesEnabled(true);  // Enable updates for the first batch
-  resultList->viewport()->update();     // Force repaint
+  resultList->setUpdatesEnabled(true);
+  resultList->viewport()->update();  // Force repaint
   resultList->setDisabled(false);
 }
 
