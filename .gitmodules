@@ -6,4 +6,4 @@
 	url = git@github.com:Jakobimatrix/utils.git
 [submodule "src/timer"]
 	path = src/timer
-	url = git@github.com/Jakobimatrix/timer.git
+	url = git@github.com:Jakobimatrix/timer.git
