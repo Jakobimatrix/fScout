@@ -1,5 +1,7 @@
 #include "displayQt.h"
 
+#include <utils/system/memory.h>
+
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QtWidgets>
@@ -251,7 +253,12 @@ void DisplayQt::setStatus(const std::wstring &msg, int timeout) {
   finder_output_widget->setDisabled(!enableSearch);
   finder_widget->setDisabled(!enableSearch);
 
-  statusBar()->showMessage(QString::fromStdWString(msg), timeout);
+  const double mem = util::MemoryUsage::get(util::MemoryUnit::MB);
+
+
+
+  statusBar()->showMessage(
+      QString::fromStdWString(msg + L" - memory usage: " + std::to_wstring(mem) + L"MB"), timeout);
 }
 
 void DisplayQt::about() {

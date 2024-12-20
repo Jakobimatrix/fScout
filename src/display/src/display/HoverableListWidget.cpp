@@ -115,9 +115,9 @@ QString HoverableListWidget::shortenPathWithEllipsis(const QString &leftPathPart
 
 void HoverableListWidget::addSearchResultItem(const std::filesystem::path &searchResult,
                                               const std::wstring &search) {
-  Globals::getFrameTimer().frameStart();
+  // Globals::getFrameTimer().frameStart();
 
-  auto t1 = Globals::getFrameTimer().startScopedTimer("scoring");
+  // auto t1 = Globals::getFrameTimer().startScopedTimer("scoring");
 
   static std::unordered_map<int, QString> scoreEmphasis = {
       {3, "color: green; font-weight: bold;"},    // Exact match
@@ -129,8 +129,8 @@ void HoverableListWidget::addSearchResultItem(const std::filesystem::path &searc
   std::wstring match = util::getLastPathComponent(searchResult);
   std::vector<int> scores = Dictionary::getMatchScores(search, match);
 
-  t1.stop();
-  auto t2 = Globals::getFrameTimer().startScopedTimer("htmling");
+  // t1.stop();
+  // auto t2 = Globals::getFrameTimer().startScopedTimer("htmling");
 
   QString emphasizedMatch;
   for (size_t i = 0; i < match.size(); ++i) {
@@ -139,8 +139,8 @@ void HoverableListWidget::addSearchResultItem(const std::filesystem::path &searc
         QString("<span style='%1'>%2</span>").arg(style).arg(QString(match[i]));
   }
 
-  t2.stop();
-  auto t3 = Globals::getFrameTimer().startScopedTimer("insering");
+  // t2.stop();
+  // auto t3 = Globals::getFrameTimer().startScopedTimer("insering");
 
   QString path =
       QString::fromStdWString(searchResult.parent_path().wstring()) + "/";
@@ -157,8 +157,8 @@ void HoverableListWidget::addSearchResultItem(const std::filesystem::path &searc
   QFont font = this->font();
   item->setFont(font);  // set font to listen to scale change
   addItem(item);
-  t3.stop();
-  Globals::getFrameTimer().frameStop();
+  // t3.stop();
+  // Globals::getFrameTimer().frameStop();
 }
 
 void HoverableListWidget::clear() {

@@ -382,25 +382,13 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
     const size_t numFuzzyReplacements = std::min(
         2ul, static_cast<size_t>(std::round(fuzzyCoefficient * needle.size())));
 
-    /*
-    const size_t numFuzzyReplacements =
-        static_cast<size_t>(std::round(fuzzyCoefficient * needle.size()));*/
-    Timer tSearch;
-    tSearch.start();
     dictionary->search(stopWorking, needle, numFuzzyReplacements, wildcardChar, matches);
-    std::cout << "search finnished "
-              << tSearch.getPassedTime<std::chrono::microseconds>().count()
-              << std::endl;
-    ;
+
     finnished = true;
     if (collector && collector->joinable()) {
       collector->join();
       collector.reset();
     }
-    std::cout << "sendToDisplay finnished "
-              << tSearch.getPassedTime<std::chrono::microseconds>().count()
-              << std::endl;
-    ;
   });
 }
 
