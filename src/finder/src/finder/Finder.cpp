@@ -325,9 +325,10 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
             results.push_back(path);
           }
         }
-        std::cout << "found: " << scoredResults.size()
-                  << " unique: " << seenPaths.size()
-                  << " send: " << results.size() << std::endl;
+        /*F_DEBUG("found %lu, unique %lu, send %lu",
+                scoredResults.size(),
+                seenPaths.size(),
+                results.size());*/
         callback(finished, results, needle);
       };
 
@@ -373,15 +374,25 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
       }
     });
 
-    wchar_t wildcard{useWildcardPattern ? wildcard : Dictionary::NO_WILDCARD};
+    wchar_t wildcardChar{useWildcardPattern ? wildcard : Dictionary::NO_WILDCARD};
     const size_t numFuzzyReplacements =
         static_cast<size_t>(std::round(fuzzyCoefficient * needle.size()));
-    dictionary->search(stopWorking, needle, numFuzzyReplacements, wildcard, matches);
+    Timer tSearch;
+    tSearch.start();
+    dictionary->search(stopWorking, needle, numFuzzyReplacements, wildcardChar, matches);
+    std::cout << "search finnished "
+              << tSearch.getPassedTime<std::chrono::microseconds>().count()
+              << std::endl;
+    ;
     finnished = true;
     if (collector && collector->joinable()) {
       collector->join();
       collector.reset();
     }
+    std::cout << "sendToDisplay finnished "
+              << tSearch.getPassedTime<std::chrono::microseconds>().count()
+              << std::endl;
+    ;
   });
 }
 

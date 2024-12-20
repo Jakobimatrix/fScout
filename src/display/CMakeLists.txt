@@ -11,6 +11,7 @@ target_link_libraries(display_lib
   settings_lib_1.0.0
   globals_lib
   finder_lib
+  timer_lib
   )
 
 target_include_directories(display_lib PUBLIC STATIC "${CMAKE_CURRENT_SOURCE_DIR}/src")

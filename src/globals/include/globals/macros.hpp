@@ -22,6 +22,14 @@ inline BENCHMARK_ALWAYS_INLINE void DoNotOptimize(Tp& value) {
 #endif
 }
 
+#if defined(__clang__) || defined(__GNUC__)
+#define CURRENT_FUNC __PRETTY_FUNCTION__
+#elif defined(_MSC_VER)
+#define CURRENT_FUNC __FUNCSIG__
+#else
+#define CURRENT_FUNC __func__
+#endif
+
 #define RED(string) "\x1b[31m" string "\x1b[0m"
 #define ORANGE(string) "\033[38:5:208:0m" string "\033[0m"
 

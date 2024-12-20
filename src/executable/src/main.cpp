@@ -1,6 +1,7 @@
 #include <display/displayQt.h>
 #include <unistd.h>
 
+#include <QAbstractEventDispatcher>
 #include <QApplication>
 #include <QSurfaceFormat>
 #include <globals/globals.hpp>
@@ -33,6 +34,15 @@ int main(int argc, char* argv[]) {
   format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
   QSurfaceFormat::setDefaultFormat(format);
   mainWin.show();
+  /*
+  QObject::connect(QAbstractEventDispatcher::instance(),
+                   &QAbstractEventDispatcher::aboutToBlock,
+                   []() { Globals::getFrameTimer().frameStart(); });
 
+  QObject::connect(QAbstractEventDispatcher::instance(),
+                   &QAbstractEventDispatcher::awake,
+                   []() { Globals::getFrameTimer().frameStart(); });
+
+  */
   return app.exec();
 }

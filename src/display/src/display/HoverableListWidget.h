@@ -8,8 +8,10 @@
 #include <QTimer>
 #include <filesystem>
 #include <functional>
+#include <globals/globals.hpp>
 #include <map>
 #include <vector>
+
 
 class RichTextDelegate : public QStyledItemDelegate {
  public:
@@ -42,11 +44,9 @@ class RichTextDelegate : public QStyledItemDelegate {
 
       painter->save();
 
-      // Set hover and selection background colors
+      // Set hover background color
       if (option.state.testFlag(QStyle::State_MouseOver)) {
         painter->fillRect(option.rect, QColor(211, 211, 211));  // Light gray for hover
-      } else if (option.state.testFlag(QStyle::State_Selected)) {
-        // painter->fillRect(option.rect, option.palette.highlight());  // Selection color
       }
 
       painter->setClipRect(option.rect);

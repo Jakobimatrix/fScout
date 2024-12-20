@@ -16,6 +16,7 @@ target_link_libraries(finder_lib
   settings_lib_1.0.0
   utils_lib_0.0.1
   globals_lib
+  timer_lib
   )
 
 target_include_directories(finder_lib PUBLIC STATIC "${CMAKE_CURRENT_SOURCE_DIR}/src")

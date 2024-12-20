@@ -18,6 +18,7 @@
 #include <QUrl>
 #include <QVBoxLayout>
 #include <globals/macros.hpp>
+#include <globals/timer.hpp>
 #include <string>
 
 FinderOutputWidget::FinderOutputWidget(QWidget *parent)
@@ -83,6 +84,7 @@ void FinderOutputWidget::setSearchResults(const std::vector<std::filesystem::pat
   // paint the first 20 which are visible, paint the rest later.
 
   resultList->setUpdatesEnabled(false);  // Disable updates temporarily
+  resultList->setDisabled(true);
 
   constexpr int initialBatchSize = 20;
 
@@ -107,6 +109,7 @@ void FinderOutputWidget::setSearchResults(const std::vector<std::filesystem::pat
 
   resultList->setUpdatesEnabled(true);  // Enable updates for the first batch
   resultList->viewport()->update();     // Force repaint
+  resultList->setDisabled(false);
 }
 
 void FinderOutputWidget::reset() {

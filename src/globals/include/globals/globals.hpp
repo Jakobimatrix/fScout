@@ -4,6 +4,8 @@
 
 #include <filesystem>  // if using compiler < c++17 use <experimental/filesystem ans std::experimental::filesystem
 #include <stdexcept>
+#include <timer/collecting_timer.hpp>
+#include <timer/frame_timer.hpp>
 #include <vector>
 
 
@@ -14,6 +16,22 @@ class Globals {
   Globals(Globals const& copy);             // Not Implemented
   Globals& operator=(Globals const& copy);  // Not Implemented
 
+  ~Globals() {
+    constexpr char seperator = ';';
+    const std::string filename_timers =
+        std::to_string(timeSinceEpochMillisec()) + "_timers.csv";
+    const std::string path_timers =
+        (absolute_path_to_settings / filename_timers).string();
+    collecting_timer.measurementsToFile<std::chrono::microseconds>(path_timers, seperator);
+
+    const std::string filename_frame_timers =
+        std::to_string(timeSinceEpochMillisec()) + "_frame_timers.csv";
+    const std::string path_frame_timers =
+        (absolute_path_to_settings / filename_frame_timers).string();
+
+    frame_timer.measurementsToFile<std::chrono::microseconds>(path_frame_timers, seperator);
+  }
+
  public:
   /*!
    * \brief private Get the one instance of the class
@@ -23,6 +41,18 @@ class Globals {
     static Globals instance;
     return instance;
   }
+
+  static CollectingTimer& getCollectingTimer() {
+    return getInstance().collecting_timer;
+  }
+
+  static FrameTimer& getFrameTimer() { return getInstance().frame_timer; }
+
+  static uint64_t timeSinceEpochMillisec() {
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+  }
+
 
  private:
   void init_paths() {
@@ -118,4 +148,8 @@ class Globals {
   const std::string VERSION_NAME = std::string("Abyssinian");
   const std::wstring BINARY_FORMAT_IDENTIFIER = std::wstring(L"8008135-fScout");
   const std::wstring BINARY_FILE_INDEX = std::wstring(L"fScout.index");
+
+  // timer
+  mutable CollectingTimer collecting_timer;
+  mutable FrameTimer frame_timer;
 };
