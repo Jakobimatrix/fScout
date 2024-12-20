@@ -34,7 +34,5 @@ struct TreeNode {
   void serialize(std::wofstream& outFile) const;
   static TreeNode* deserialize(std::wifstream& inFile);
 
-  static void print(const TreeNode* node, const std::string& prefix, bool is_last);
-
   static void print2dot(const TreeNode* node, std::wofstream& file);
 };

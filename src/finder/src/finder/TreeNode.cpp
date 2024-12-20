@@ -95,31 +95,6 @@ bool TreeNode::isLeaf() const { return !_paths.empty(); }
 size_t TreeNode::getMaxWordLength() const { return _depth + 1; }
 
 
-void TreeNode::print(const TreeNode* node, const std::string& prefix, bool is_last) {
-  std::string currentPrefix = prefix + (is_last ? "└" : "├");
-
-  if (node->isLeaf()) {
-    // Print the paths for leaf nodes
-    for (size_t i = 0; i < node->_paths.size(); ++i) {
-      std::cout << currentPrefix << node->_paths[i].path.filename().string()
-                << " -> " << node->_paths[i].path.string() << "\n";
-      if (i != node->_paths.size() - 1) {
-        currentPrefix = prefix + (is_last ? " " : "│");  // Align next path entries
-      }
-    }
-  }
-
-  // Iterate over the children
-  auto it = node->_children.begin();
-  while (it != node->_children.end()) {
-    bool lastChild = (std::next(it) == node->_children.end());
-    std::cout << prefix << (is_last ? " " : "│") << (lastChild ? "└" : "├")
-              << it->first << "\n";
-    print(it->second, prefix + (is_last ? " " : "│"), lastChild);
-    ++it;
-  }
-}
-
 void TreeNode::print2dot(const TreeNode* node, std::wofstream& file) {
   static int nodeId = 0;  // Unique ID for each node
   std::wstring currentNodeName = L"N" + std::to_wstring(nodeId);

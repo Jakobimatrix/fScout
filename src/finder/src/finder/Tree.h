@@ -36,7 +36,6 @@ class Tree {
   void serialize(std::wofstream &outFile) const;
   void deserialize(std::wifstream &inFile);
 
-  void print() const;
   void generateDotFile(const std::string &filename) const;
 
  private:

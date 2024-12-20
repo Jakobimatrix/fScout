@@ -144,8 +144,6 @@ void Tree::deserialize(std::wifstream &inFile) {
   _root = std::unique_ptr<TreeNode>(TreeNode::deserialize(inFile));
 }
 
-void Tree::print() const { TreeNode::print(_root.get(), "", true); }
-
 void Tree::generateDotFile(const std::string &filename) const {
   std::wofstream file(filename);
   file << L"digraph Tree {\n";

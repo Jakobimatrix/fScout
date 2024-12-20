@@ -379,8 +379,9 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
 
     wchar_t wildcardChar{useWildcardPattern ? wildcard : Dictionary::NO_WILDCARD};
 
+    constexpr size_t MAX_FUZZY_REPLACEMENTS = 2;
     const size_t numFuzzyReplacements = std::min(
-        2ul, static_cast<size_t>(std::round(fuzzyCoefficient * needle.size())));
+        MAX_FUZZY_REPLACEMENTS, static_cast<size_t>(std::round(fuzzyCoefficient * needle.size())));
 
     dictionary->search(stopWorking, needle, numFuzzyReplacements, wildcardChar, matches);
 

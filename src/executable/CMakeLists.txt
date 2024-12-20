@@ -6,4 +6,9 @@ list(APPEND fScout_GUI_SOURCES
   Qt5::Widgets
 )
 
+# for utlis/system/memory.h
+if(WIN32)
+  list(APPEND LIBS psapi)
+endif()
+
 target_link_libraries(fScout_GUI ${fScout_GUI_SOURCES} ${LIBS})
