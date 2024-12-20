@@ -138,11 +138,8 @@ bool Finder::shouldIndexEntry(const std::filesystem::directory_entry& entry) con
   }
 
   const auto filename = util::getLastPathComponent(entry);
-  // Exclude hidden objects (if not searching hidden objects)
-  if (!searchHiddenObjects) {
-    if (filename.empty() || filename[0] == '.') {
-      return false;
-    }
+  if (filename.empty()) {
+    return false;
   }
 
   if (!std::filesystem::is_directory(entry.status())) {
@@ -362,10 +359,14 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
           // hopefully holdDynamicLoading will prevent this!
           // we could also implement a thread save vector...
           TreeNode::PathInfo match = matches[num_send_matches];
-          if (match.isDirectory && searchForFolderNames ||
-              !match.isDirectory && searchForFileNames) {
+          const auto name = util::getLastPathComponent(match.path);
+          bool notHidden = searchHiddenObjects || name[0] != L'.';
+
+          if (notHidden && 
+              (match.isDirectory && searchForFolderNames ||
+              !match.isDirectory && searchForFileNames)) {
             scoredResults.emplace(
-                Dictionary::scoreMatch(needle, util::getLastPathComponent(match.path)),
+                Dictionary::scoreMatch(needle, name),
                 match.path);
           }
         }
