@@ -18,6 +18,19 @@
 class Tree {
   std::unique_ptr<TreeNode> _root;
 
+  struct SearchVariables {
+    Needle &needle;
+    std::vector<TreeNode::PathInfo> &result;
+    std::atomic<bool> &stopSearch;
+    std::unordered_set<const TreeNode *> dontVisitAgain;
+
+    // Constructor
+    SearchVariables(Needle &needle_,
+                    std::vector<TreeNode::PathInfo> &result_,
+                    std::atomic<bool> &stopSearch_)
+        : needle(needle_), result(result_), stopSearch(stopSearch_) {}
+  };
+
  public:
   Tree();
   Tree(const Tree &) = delete;
@@ -27,12 +40,7 @@ class Tree {
 
   void insertWord(const std::wstring &, const std::filesystem::path &, const bool);
 
-  void searchHelper(const TreeNode *nodePtr,
-                    // TODO make this three a "search Object"
-                    Needle &,
-                    std::vector<TreeNode::PathInfo> &result,
-                    std::atomic<bool> &stopSearch,
-                    std::unordered_set<const TreeNode *> &dontVisitAgain) const;
+  void searchHelper(const TreeNode *nodePtr, SearchVariables &) const;
 
   void search(Needle, std::atomic<bool> &, std::vector<TreeNode::PathInfo> &matches) const;
 

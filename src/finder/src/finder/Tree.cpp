@@ -38,28 +38,24 @@ void Tree::traverse(const TreeNode *rootSubT, std::vector<TreeNode::PathInfo> &p
   }
 }
 
-void Tree::searchHelper(const TreeNode *nodePtr,
-                        Needle &needle,
-                        std::vector<TreeNode::PathInfo> &result,
-                        std::atomic<bool> &stopSearch,
-                        std::unordered_set<const TreeNode *> &dontVisitAgain) const {
-  if (stopSearch.load()) {
+void Tree::searchHelper(const TreeNode *nodePtr, SearchVariables &vars) const {
+  if (vars.stopSearch.load()) {
     return;
   }
 
-  if (dontVisitAgain.contains(nodePtr)) {
+  if (vars.dontVisitAgain.contains(nodePtr)) {
     return;
   }
 
-  if (needle.found()) {
+  if (vars.needle.found()) {
     // Base case: we’ve processed all prefix characters, traverse the remaining tree
-    dontVisitAgain.insert(nodePtr);  // actually we can go back further to the next branch, but this adds more complexity and the time benefit might be small
-    traverse(nodePtr, result);
+    vars.dontVisitAgain.insert(nodePtr);  // actually we can go back further to the next branch, but this adds more complexity and the time benefit might be small
+    traverse(nodePtr, vars.result);
     return;
   }
 
   // if the needle is longer than the remaining depth, we wont finde anything.
-  if (nodePtr->getMaxWordLength() < needle.getMinNecessaryDepth()) {
+  if (nodePtr->getMaxWordLength() < vars.needle.getMinNecessaryDepth()) {
     return;
   }
 
@@ -68,78 +64,78 @@ void Tree::searchHelper(const TreeNode *nodePtr,
   // so search all children with the complete needle
   // this is ok, because if needle "pictures" never gets reduced to an empty needle (see base case) results wont be written.
   // this only makes sense if the depth is big enough
-  if (needle.notIncremented()) {
+  if (vars.needle.notIncremented()) {
     for (auto it = nodePtr->_children.begin(); it != nodePtr->_children.end(); ++it) {
-      if (it->second->getMaxWordLength() < needle.getMinNecessaryDepth()) {
+      if (it->second->getMaxWordLength() < vars.needle.getMinNecessaryDepth()) {
         continue;
       }
-      searchHelper(it->second, needle, result, stopSearch, dontVisitAgain);
+      searchHelper(it->second, vars);
     }
   }
 
 
   // if we have a wild card, always use that
-  if (needle.nextIsWildCard()) {
-    needle.nextIndex();
+  if (vars.needle.nextIsWildCard()) {
+    vars.needle.nextIndex();
     for (const auto &child : nodePtr->_children) {
-      if (child.second->getMaxWordLength() < needle.getMinNecessaryDepth()) {
+      if (child.second->getMaxWordLength() < vars.needle.getMinNecessaryDepth()) {
         continue;
       }
-      searchHelper(child.second, needle, result, stopSearch, dontVisitAgain);
+      searchHelper(child.second, vars);
     }
-    needle.undo_nextIndex();
+    vars.needle.undo_nextIndex();
     return;
   }
 
   // if needle is "picture"
   // than search on this tree branch for p
   // and give the "p" child the needle "icture"
-  char letter = needle.getCurrentLetter();
+  char letter = vars.needle.getCurrentLetter();
 
   auto it = nodePtr->_children.find(letter);
   if (it != nodePtr->_children.end()) {
-    needle.nextIndex();
-    searchHelper(it->second, needle, result, stopSearch, dontVisitAgain);
-    needle.undo_nextIndex();
+    vars.needle.nextIndex();
+    searchHelper(it->second, vars);
+    vars.needle.undo_nextIndex();
     return;
   }
 
   // needle not found, lets see, if we still have a fuzzy search left
 
-  if (!needle.canDoFuzzySearch()) {
+  if (!vars.needle.canDoFuzzySearch()) {
     return;
   }
-  needle.useFuzzySeaerch();
+  vars.needle.useFuzzySeaerch();
   // this is equal to wild card
-  needle.nextIndex();
+  vars.needle.nextIndex();
   for (const auto &child : nodePtr->_children) {
-    if (child.second->getMaxWordLength() < needle.getMinNecessaryDepth()) {
+    if (child.second->getMaxWordLength() < vars.needle.getMinNecessaryDepth()) {
       continue;
     }
-    searchHelper(child.second, needle, result, stopSearch, dontVisitAgain);
+    searchHelper(child.second, vars);
   }
 
   // remove the current letter to the search string by incrementing the index
   // and returning to the current node
-  searchHelper(nodePtr, needle, result, stopSearch, dontVisitAgain);
-  needle.undo_nextIndex();
+  searchHelper(nodePtr, vars);
+  vars.needle.undo_nextIndex();
 
   // add any possible letter to the search string by not incrementing the index
   for (const auto &child : nodePtr->_children) {
-    if (child.second->getMaxWordLength() < needle.getMinNecessaryDepth()) {
+    if (child.second->getMaxWordLength() < vars.needle.getMinNecessaryDepth()) {
       continue;
     }
-    searchHelper(child.second, needle, result, stopSearch, dontVisitAgain);
+    searchHelper(child.second, vars);
   }
-  needle.undo_useFuzzySeaerch();
+  vars.needle.undo_useFuzzySeaerch();
 }
 
 void Tree::search(Needle needle,
                   std::atomic<bool> &stopSearch,
                   std::vector<TreeNode::PathInfo> &matches) const {
   const TreeNode *nodePtr = _root.get();
-  std::unordered_set<const TreeNode *> dontVisitAgain;
-  searchHelper(nodePtr, needle, matches, stopSearch, dontVisitAgain);
+  SearchVariables vars(needle, matches, stopSearch);
+  searchHelper(nodePtr, vars);
 }
 
 size_t Tree::getMaxEntryLength() const { return _root->_depth; }
