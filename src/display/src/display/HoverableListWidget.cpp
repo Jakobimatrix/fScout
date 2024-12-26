@@ -84,11 +84,9 @@ void HoverableListWidget::resizeEvent(QResizeEvent *event) {
 
   setUpdatesEnabled(false);
   // Recalculate ellipses for all items based on the new size
-  for (int i = 0; i < count(); ++i) {
-    QListWidgetItem *item = this->item(i);
-    const QString fullPath =
-        shortenPathWithEllipsis(entries[i].leftPathPart, entries[i].rightPathPart) +
-        entries[i].rightPathPartWithHtml;
+  for (int i = 0; i < QListWidget::count(); ++i) {
+    QListWidgetItem *item = QListWidget::item(i);
+    const QString fullPath = shortenPathWithEllipsis(i) + entries[i].rightPathPartWithHtml;
     item->setText(fullPath);
   }
 
@@ -96,41 +94,71 @@ void HoverableListWidget::resizeEvent(QResizeEvent *event) {
   viewport()->update();
 }
 
+void HoverableListWidget::scrollContentsBy(int dx, int dy) {
+  QListWidget::scrollContentsBy(dx, dy);
+
+  if (dy < 0) {
+    for (size_t i = lastVisibleIndex + 1; i < entries.size() && dy < 0; ++i, ++dy) {
+      makeEntrieVisible(i);
+      lastVisibleIndex = i;
+    }
+  }
+}
+
 int HoverableListWidget::getWordWidth(const QString &word) const {
   QFontMetrics fm = QPainter(viewport()).fontMetrics();
   return fm.width(word);
 }
 
-QString HoverableListWidget::shortenPathWithEllipsis(const QString &leftPathPart,
-                                                     const QString &rightPathPart) const {
+QString HoverableListWidget::shortenPathWithEllipsis(const size_t entryIndex) const {
   QFontMetrics metrics(font());
   constexpr int MAGIC_PADDING = 25;
-  const int availableWidth =
-      viewport()->width() - MAGIC_PADDING - metrics.width(rightPathPart);
+  const int availableWidth = viewport()->width() - MAGIC_PADDING -
+                             metrics.width(entries[entryIndex].rightPathPart);
 
-  return metrics.elidedText(leftPathPart, Qt::ElideMiddle, availableWidth);
+  return metrics.elidedText(entries[entryIndex].leftPathPart, Qt::ElideMiddle, availableWidth);
 }
 
+size_t HoverableListWidget::getNumItemsBeforeScrollbar() const {
+  if (QListWidget::count() > 0) {
+    const int viewportHeight = viewport()->height();
+    const int itemHeight =
+        QListWidget::visualRect(QListWidget::model()->index(0, 0)).height();
 
+    if (viewportHeight > 0 && itemHeight > 0) {
+      return static_cast<size_t>(viewportHeight / itemHeight);
+    }
+  }
+  return 42;
+}
 
-void HoverableListWidget::addSearchResultItem(const std::filesystem::path &searchResult,
-                                              const std::wstring &search) {
-  // Globals::getFrameTimer().frameStart();
+void HoverableListWidget::addSearchResultItem(const std::filesystem::path &searchResult) {
 
-  // auto t1 = Globals::getFrameTimer().startScopedTimer("scoring");
+  QString path =
+      QString::fromStdWString(searchResult.parent_path().wstring()) + "/";
+  const std::wstring match = util::getLastPathComponent(searchResult);
+  QString rightPathPart = QString::fromStdWString(match);
+  // +5 just in case: we want to see a scrollbar to trigger the scroll event
+  const bool visible = QListWidget::count() < getNumItemsBeforeScrollbar() + 5;
+  entries.emplace_back(ItemInfo{path, rightPathPart, rightPathPart, visible});
 
+  if (visible) {
+    lastVisibleIndex = entries.size() - 1;
+    makeEntrieVisible(lastVisibleIndex);
+  }
+}
+
+void HoverableListWidget::makeEntrieVisible(const size_t entriyIndex) {
   static std::unordered_map<int, QString> scoreEmphasis = {
       {3, "color: green; font-weight: bold;"},    // Exact match
       {2, "color: green; font-weight: italic;"},  // Case mismatch
       {1, "color: blue;"},                        // Confused character
       {0, "color: black;"},                       // Total mismatch
   };
+  assert(entries.size() > entriyIndex);
 
-  std::wstring match = util::getLastPathComponent(searchResult);
-  std::vector<int> scores = Dictionary::getMatchScores(search, match);
-
-  // t1.stop();
-  // auto t2 = Globals::getFrameTimer().startScopedTimer("htmling");
+  const std::wstring match = entries[entriyIndex].rightPathPart.toStdWString();
+  std::vector<int> scores = Dictionary::getMatchScores(searchInput, match);
 
   QString emphasizedMatch;
   for (size_t i = 0; i < match.size(); ++i) {
@@ -138,32 +166,24 @@ void HoverableListWidget::addSearchResultItem(const std::filesystem::path &searc
     emphasizedMatch +=
         QString("<span style='%1'>%2</span>").arg(style).arg(QString(match[i]));
   }
+  entries[entriyIndex].rightPathPartWithHtml = emphasizedMatch;
 
-  // t2.stop();
-  // auto t3 = Globals::getFrameTimer().startScopedTimer("insering");
 
-  QString path =
-      QString::fromStdWString(searchResult.parent_path().wstring()) + "/";
-
-  QString rightPathPart = QString::fromStdWString(match);
-  entries.emplace_back(ItemInfo{path, rightPathPart, emphasizedMatch});
-
-  QString fullPathStr = shortenPathWithEllipsis(path, rightPathPart) + emphasizedMatch;
+  QString fullPathStr = shortenPathWithEllipsis(entriyIndex) + emphasizedMatch;
 
 
   QListWidgetItem *item = new QListWidgetItem(fullPathStr);
-  item->setToolTip(QString::fromStdWString(searchResult.wstring()));
+  item->setToolTip(QString::fromStdWString(entries[entriyIndex].getPath().wstring()));
   item->setFlags(item->flags() | Qt::ItemIsSelectable);
-  QFont font = this->font();
+  QFont font = QWidget::font();
   item->setFont(font);  // set font to listen to scale change
-  addItem(item);
-  // t3.stop();
-  // Globals::getFrameTimer().frameStop();
+  QListWidget::addItem(item);
 }
 
-void HoverableListWidget::clear() {
+void HoverableListWidget::clear(const size_t newSize) {
   entries.clear();
-  entries.reserve(5000);
+  entries.reserve(newSize);
+  lastVisibleIndex = 0;
   QListWidget::clear();
 }
 

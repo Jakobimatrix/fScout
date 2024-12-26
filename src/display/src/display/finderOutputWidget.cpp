@@ -77,23 +77,17 @@ void FinderOutputWidget::setSearchResults(const std::vector<std::filesystem::pat
     return;
   }
 
-  // this will always be executed by QThread main. So no multithreading problems here.
+  // this will always be executed by QThread main. So no multithreading or painting problems here.
 
-
-  resultList->setUpdatesEnabled(false);  // Disable updates temporarily
-  resultList->setDisabled(true);
-  resultList->clear();
+  resultList->clear(searchResults.size());
+  resultList->setSearchInput(search);
 
   for (const auto &result : searchResults) {
     if (numQueuedProcesses.load() > 0) {
-      return;
+      return;  // we have new data
     }
-    resultList->addSearchResultItem(result, search);
+    resultList->addSearchResultItem(result);
   }
-
-  resultList->setUpdatesEnabled(true);
-  resultList->viewport()->update();  // Force repaint
-  resultList->setDisabled(false);
 }
 
 void FinderOutputWidget::reset() {
@@ -102,7 +96,7 @@ void FinderOutputWidget::reset() {
         this, [this]() { reset(); }, Qt::QueuedConnection);
     return;
   }
-  resultList->clear();
+  resultList->clear(0);
 }
 
 void FinderOutputWidget::changeScale(const double scaleFactor) {

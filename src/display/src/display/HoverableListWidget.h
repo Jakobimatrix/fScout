@@ -67,11 +67,12 @@ class HoverableListWidget : public QListWidget {
   using GetDoubleClickInterval = std::function<int()>;
 
   HoverableListWidget(QWidget *parent = nullptr);
-  void addSearchResultItem(const std::filesystem::path &searchResult,
-                           const std::wstring &search);
+  void addSearchResultItem(const std::filesystem::path &searchResult);
+
+  void setSearchInput(const std::wstring &needle) { searchInput = needle; }
 
 
-  void clear();
+  void clear(const size_t newSize);
 
   void setDoubleClickIntervalFunction(const GetDoubleClickInterval &func) {
     getDoubleClickInterval = func;
@@ -84,10 +85,15 @@ class HoverableListWidget : public QListWidget {
   void mouseMoveEvent(QMouseEvent *event) override;
   void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
-  QString shortenPathWithEllipsis(const QString &leftPathPart,
-                                  const QString &rightPathPart) const;
+  void scrollContentsBy(int dx, int dy) override;
+
+  QString shortenPathWithEllipsis(const size_t entriyIndex) const;
+
+  void makeEntrieVisible(const size_t entriyIndex);
 
   int getWordWidth(const QString &word) const;
+
+  size_t getNumItemsBeforeScrollbar() const;
 
   QTimer clickTimer;
   QListWidgetItem *pendingItem = nullptr;
@@ -96,7 +102,15 @@ class HoverableListWidget : public QListWidget {
     QString leftPathPart;
     QString rightPathPart;
     QString rightPathPartWithHtml;
+    bool visible;
+
+    std::filesystem::path getPath() const {
+      std::filesystem::path path(leftPathPart.toStdWString());
+      return path / rightPathPart.toStdWString();
+    }
   };
 
   std::vector<ItemInfo> entries;
+  std::wstring searchInput;
+  size_t lastVisibleIndex;
 };

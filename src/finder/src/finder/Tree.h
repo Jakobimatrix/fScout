@@ -33,6 +33,7 @@ class Tree {
 
  public:
   Tree();
+
   Tree(const Tree &) = delete;
   ~Tree() = default;
 
