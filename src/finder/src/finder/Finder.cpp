@@ -362,12 +362,9 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
           const auto name = util::getLastPathComponent(match.path);
           bool notHidden = searchHiddenObjects || name[0] != L'.';
 
-          if (notHidden && 
-              (match.isDirectory && searchForFolderNames ||
-              !match.isDirectory && searchForFileNames)) {
-            scoredResults.emplace(
-                Dictionary::scoreMatch(needle, name),
-                match.path);
+          if (notHidden && (match.isDirectory && searchForFolderNames ||
+                            !match.isDirectory && searchForFileNames)) {
+            scoredResults.emplace(Dictionary::scoreMatch(needle, name), match.path);
           }
         }
         searchFinnishedAndAllSend = finnished && new_size == matches.size();
@@ -381,11 +378,15 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
     wchar_t wildcardChar{useWildcardPattern ? wildcard : Dictionary::NO_WILDCARD};
 
     constexpr size_t MAX_FUZZY_REPLACEMENTS = 2;
-    const size_t numFuzzyReplacements = std::min(
-        MAX_FUZZY_REPLACEMENTS, static_cast<size_t>(std::round(fuzzyCoefficient * needle.size())));
+    const size_t numFuzzyReplacements =
+        std::min(MAX_FUZZY_REPLACEMENTS,
+                 static_cast<size_t>(std::round(fuzzyCoefficient * needle.size())));
 
+    Timer searchTimer;
+    searchTimer.start();
     dictionary->search(stopWorking, needle, numFuzzyReplacements, wildcardChar, matches);
-
+    const auto time = searchTimer.getPassedTime<std::chrono::milliseconds>();
+    std::cout << " search: " << time.count() << "ms" << std::endl;
     finnished = true;
     if (collector && collector->joinable()) {
       collector->join();

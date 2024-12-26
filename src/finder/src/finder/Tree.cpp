@@ -41,12 +41,19 @@ void Tree::traverse(const TreeNode *rootSubT, std::vector<TreeNode::PathInfo> &p
 void Tree::searchHelper(const TreeNode *nodePtr,
                         Needle &needle,
                         std::vector<TreeNode::PathInfo> &result,
-                        std::atomic<bool> &stopSearch) const {
+                        std::atomic<bool> &stopSearch,
+                        std::unordered_set<const TreeNode *> &dontVisitAgain) const {
   if (stopSearch.load()) {
     return;
   }
+
+  if (dontVisitAgain.contains(nodePtr)) {
+    return;
+  }
+
   if (needle.found()) {
     // Base case: we’ve processed all prefix characters, traverse the remaining tree
+    dontVisitAgain.insert(nodePtr);  // actually we can go back further to the next branch, but this adds more complexity and the time benefit might be small
     traverse(nodePtr, result);
     return;
   }
@@ -66,7 +73,7 @@ void Tree::searchHelper(const TreeNode *nodePtr,
       if (it->second->getMaxWordLength() < needle.getMinNecessaryDepth()) {
         continue;
       }
-      searchHelper(it->second, needle, result, stopSearch);
+      searchHelper(it->second, needle, result, stopSearch, dontVisitAgain);
     }
   }
 
@@ -78,7 +85,7 @@ void Tree::searchHelper(const TreeNode *nodePtr,
       if (child.second->getMaxWordLength() < needle.getMinNecessaryDepth()) {
         continue;
       }
-      searchHelper(child.second, needle, result, stopSearch);
+      searchHelper(child.second, needle, result, stopSearch, dontVisitAgain);
     }
     needle.undo_nextIndex();
     return;
@@ -92,7 +99,7 @@ void Tree::searchHelper(const TreeNode *nodePtr,
   auto it = nodePtr->_children.find(letter);
   if (it != nodePtr->_children.end()) {
     needle.nextIndex();
-    searchHelper(it->second, needle, result, stopSearch);
+    searchHelper(it->second, needle, result, stopSearch, dontVisitAgain);
     needle.undo_nextIndex();
     return;
   }
@@ -109,12 +116,12 @@ void Tree::searchHelper(const TreeNode *nodePtr,
     if (child.second->getMaxWordLength() < needle.getMinNecessaryDepth()) {
       continue;
     }
-    searchHelper(child.second, needle, result, stopSearch);
+    searchHelper(child.second, needle, result, stopSearch, dontVisitAgain);
   }
 
   // remove the current letter to the search string by incrementing the index
   // and returning to the current node
-  searchHelper(nodePtr, needle, result, stopSearch);
+  searchHelper(nodePtr, needle, result, stopSearch, dontVisitAgain);
   needle.undo_nextIndex();
 
   // add any possible letter to the search string by not incrementing the index
@@ -122,7 +129,7 @@ void Tree::searchHelper(const TreeNode *nodePtr,
     if (child.second->getMaxWordLength() < needle.getMinNecessaryDepth()) {
       continue;
     }
-    searchHelper(child.second, needle, result, stopSearch);
+    searchHelper(child.second, needle, result, stopSearch, dontVisitAgain);
   }
   needle.undo_useFuzzySeaerch();
 }
@@ -131,7 +138,8 @@ void Tree::search(Needle needle,
                   std::atomic<bool> &stopSearch,
                   std::vector<TreeNode::PathInfo> &matches) const {
   const TreeNode *nodePtr = _root.get();
-  searchHelper(nodePtr, needle, matches, stopSearch);
+  std::unordered_set<const TreeNode *> dontVisitAgain;
+  searchHelper(nodePtr, needle, matches, stopSearch, dontVisitAgain);
 }
 
 size_t Tree::getMaxEntryLength() const { return _root->_depth; }

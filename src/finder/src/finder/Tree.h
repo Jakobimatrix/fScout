@@ -10,6 +10,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 
@@ -27,9 +28,11 @@ class Tree {
   void insertWord(const std::wstring &, const std::filesystem::path &, const bool);
 
   void searchHelper(const TreeNode *nodePtr,
+                    // TODO make this three a "search Object"
                     Needle &,
                     std::vector<TreeNode::PathInfo> &result,
-                    std::atomic<bool> &stopSearch) const;
+                    std::atomic<bool> &stopSearch,
+                    std::unordered_set<const TreeNode *> &dontVisitAgain) const;
 
   void search(Needle, std::atomic<bool> &, std::vector<TreeNode::PathInfo> &matches) const;
 
