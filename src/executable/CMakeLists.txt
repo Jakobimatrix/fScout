@@ -1,4 +1,10 @@
-add_executable(fScout_GUI src/main.cpp)
+
+if(WIN32)
+    add_executable(fScout_GUI src/main.cpp icon.rc)
+else()
+    add_executable(fScout_GUI src/main.cpp)
+endif()
+
 
 list(APPEND fScout_GUI_SOURCES
   PRIVATE globals_lib
