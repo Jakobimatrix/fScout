@@ -1,6 +1,7 @@
 #include <finder/Tree.h>
 
 #include <cctype>
+#include <iostream>  // remove
 #include <memory>
 #include <string>
 
@@ -25,10 +26,10 @@ void Tree::insertWord(const std::wstring &word,
   nodePtr->_paths.emplace_back(path, isDirectory);
 }
 
-void Tree::traverse(const TreeNode *rootSubT, std::vector<TreeNode::PathInfo> &pathList) const {
+void Tree::traverse(const TreeNode *rootSubT, SearchVariables &pathList) const {
   if (rootSubT->isLeaf()) {
-    pathList.insert(
-        std::end(pathList), std::cbegin(rootSubT->_paths), std::cend(rootSubT->_paths));
+    pathList.result.emplace_back(pathList.needle.getEffectiveSearchString(),
+                                 &rootSubT->_paths);
   }
 
   if (!rootSubT->_children.empty()) {
@@ -50,7 +51,7 @@ void Tree::searchHelper(const TreeNode *nodePtr, SearchVariables &vars) const {
   if (vars.needle.found()) {
     // Base case: we’ve processed all prefix characters, traverse the remaining tree
     vars.dontVisitAgain.insert(nodePtr);  // actually we can go back further to the next branch, but this adds more complexity and the time benefit might be small
-    traverse(nodePtr, vars.result);
+    traverse(nodePtr, vars);
     return;
   }
 
@@ -105,21 +106,24 @@ void Tree::searchHelper(const TreeNode *nodePtr, SearchVariables &vars) const {
   if (!vars.needle.canDoFuzzySearch()) {
     return;
   }
-  vars.needle.useFuzzySeaerch();
+
+  vars.needle.useFuzzySearchLetterAsWildCard();
   // this is equal to wild card
-  vars.needle.nextIndex();
   for (const auto &child : nodePtr->_children) {
     if (child.second->getMaxWordLength() < vars.needle.getMinNecessaryDepth()) {
       continue;
     }
     searchHelper(child.second, vars);
   }
+  vars.needle.undo_useFuzzySearchLetterAsWildCard();
 
   // remove the current letter to the search string by incrementing the index
   // and returning to the current node
+  vars.needle.useFuzzySearchRemoveLetter();
   searchHelper(nodePtr, vars);
-  vars.needle.undo_nextIndex();
+  vars.needle.undo_useFuzzySearchRemoveLetter();
 
+  vars.needle.useFuzzySearchAddLetter();
   // add any possible letter to the search string by not incrementing the index
   for (const auto &child : nodePtr->_children) {
     if (child.second->getMaxWordLength() < vars.needle.getMinNecessaryDepth()) {
@@ -127,15 +131,25 @@ void Tree::searchHelper(const TreeNode *nodePtr, SearchVariables &vars) const {
     }
     searchHelper(child.second, vars);
   }
-  vars.needle.undo_useFuzzySeaerch();
+  vars.needle.undo_useFuzzySearchAddLetter();
 }
 
-void Tree::search(Needle needle,
+void Tree::search(Needle &needle,
                   std::atomic<bool> &stopSearch,
-                  std::vector<TreeNode::PathInfo> &matches) const {
+                  std::vector<std::pair<std::wstring, const std::vector<TreeNode::PathInfo> *>> &matches) const {
   const TreeNode *nodePtr = _root.get();
-  SearchVariables vars(needle, matches, stopSearch);
-  searchHelper(nodePtr, vars);
+  try {
+    SearchVariables vars(needle, matches, stopSearch);
+    if (!vars.dontVisitAgain.empty()) {
+      std::cout << "Whaaaa??\n";
+    }
+    searchHelper(nodePtr, vars);
+  } catch (const std::exception &e) {
+    std::cout << "Exception during SearchVariables construction: " << e.what() << std::endl;
+    throw;
+  }
+  // SearchVariables vars(needle, matches, stopSearch);
+  // searchHelper(nodePtr, vars);
 }
 
 size_t Tree::getMaxEntryLength() const { return _root->_depth; }

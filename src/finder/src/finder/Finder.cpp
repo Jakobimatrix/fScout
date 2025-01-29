@@ -296,9 +296,10 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
   }
   constexpr size_t DYNAMIC_LOAD_THRESHOLD = 512;
   constexpr size_t VECTOR_RESERVE_SIZE = 2048;
+
   stopCurrentWorker();
   workerThread = std::make_unique<std::thread>([this, callback, needle]() {
-    std::vector<TreeNode::PathInfo> matches;
+    std::vector<std::pair<std::wstring, const std::vector<TreeNode::PathInfo>*>> matches;
 
     matches.reserve(VECTOR_RESERVE_SIZE);
     bool finnished = false;
@@ -345,26 +346,33 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
       size_t old_size = 0;
       while (!searchFinnishedAndAllSend) {
         if (stopWorking.load()) {
-          break;
+          return;
         }
         new_size = matches.size();
 
         for (; num_send_matches < new_size; ++num_send_matches) {
           if (stopWorking.load()) {
-            break;
+            return;
           }
           holdDynamicLoading();
           // copy! in case std vector relocates on resize
           // this could crash if the vector gets relocated while copying.
           // hopefully holdDynamicLoading will prevent this!
           // we could also implement a thread save vector...
-          TreeNode::PathInfo match = matches[num_send_matches];
-          const auto name = util::getLastPathComponent(match.path);
-          bool notHidden = searchHiddenObjects || name[0] != L'.';
+          const std::vector<TreeNode::PathInfo>* matchpaths =
+              matches[num_send_matches].second;
+          const std::wstring commonName =
+              util::getLastPathComponent(matchpaths->begin()->path);
+          const int score =
+              Dictionary::scoreMatch(matches[num_send_matches].first, commonName);
 
-          if (notHidden && (match.isDirectory && searchForFolderNames ||
-                            !match.isDirectory && searchForFileNames)) {
-            scoredResults.emplace(Dictionary::scoreMatch(needle, name), match.path);
+          for (const TreeNode::PathInfo& info : *matchpaths) {
+            bool notHidden = searchHiddenObjects || !util::hasHiddenElement(info.path);
+
+            if (notHidden && (info.isDirectory && searchForFolderNames ||
+                              !info.isDirectory && searchForFileNames)) {
+              scoredResults.emplace(score, info.path);
+            }
           }
         }
         searchFinnishedAndAllSend = finnished && new_size == matches.size();
@@ -377,13 +385,16 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
 
     wchar_t wildcardChar{useWildcardPattern ? wildcard : Dictionary::NO_WILDCARD};
 
+    Timer searchTimer;
+    searchTimer.start();
+    if (matches.size() > 0) {
+      std::cout << "dafuqe\n";
+    }
+
     constexpr size_t MAX_FUZZY_REPLACEMENTS = 2;
     const size_t numFuzzyReplacements =
         std::min(MAX_FUZZY_REPLACEMENTS,
                  static_cast<size_t>(std::round(fuzzyCoefficient * needle.size())));
-
-    Timer searchTimer;
-    searchTimer.start();
     dictionary->search(stopWorking, needle, numFuzzyReplacements, wildcardChar, matches);
     const auto time = searchTimer.getPassedTime<std::chrono::milliseconds>();
     std::cout << " search: " << time.count() << "ms" << std::endl;

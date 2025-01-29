@@ -20,15 +20,15 @@ class Tree {
 
   struct SearchVariables {
     Needle &needle;
-    std::vector<TreeNode::PathInfo> &result;
+    std::vector<std::pair<std::wstring, const std::vector<TreeNode::PathInfo> *>> &result;
     std::atomic<bool> &stopSearch;
     std::unordered_set<const TreeNode *> dontVisitAgain;
 
     // Constructor
     SearchVariables(Needle &needle_,
-                    std::vector<TreeNode::PathInfo> &result_,
+                    std::vector<std::pair<std::wstring, const std::vector<TreeNode::PathInfo> *>> &result_,
                     std::atomic<bool> &stopSearch_)
-        : needle(needle_), result(result_), stopSearch(stopSearch_) {}
+        : needle(needle_), result(result_), stopSearch(stopSearch_), dontVisitAgain() {}
   };
 
  public:
@@ -43,7 +43,9 @@ class Tree {
 
   void searchHelper(const TreeNode *nodePtr, SearchVariables &) const;
 
-  void search(Needle, std::atomic<bool> &, std::vector<TreeNode::PathInfo> &matches) const;
+  void search(Needle &,
+              std::atomic<bool> &,
+              std::vector<std::pair<std::wstring, const std::vector<TreeNode::PathInfo> *>> &matches) const;
 
   void serialize(std::wofstream &outFile) const;
   void deserialize(std::wifstream &inFile);
@@ -51,5 +53,5 @@ class Tree {
   void generateDotFile(const std::string &filename) const;
 
  private:
-  void traverse(const TreeNode *, std::vector<TreeNode::PathInfo> &) const;
+  void traverse(const TreeNode *, SearchVariables &) const;
 };

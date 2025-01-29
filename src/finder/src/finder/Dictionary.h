@@ -4,8 +4,8 @@
 #include <finder/Tree.h>
 
 #include <filesystem>
-#include <map>
 #include <string>
+#include <vector>
 
 class Dictionary {
  public:
@@ -20,7 +20,7 @@ class Dictionary {
               const std::wstring &needle_in,
               const size_t num_fuzzy_replacements,
               const wchar_t wildcard,
-              std::vector<TreeNode::PathInfo> &matches) const;
+              std::vector<std::pair<std::wstring, const std::vector<TreeNode::PathInfo> *>> &matches) const;
 
   void serialize(const std::filesystem::path &filename,
                  const std::chrono::steady_clock::time_point &timeOfIndexing) const;

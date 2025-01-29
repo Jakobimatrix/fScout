@@ -26,16 +26,15 @@ void Dictionary::addPath(const std::filesystem::path& path, const bool isDirecto
 }
 
 
-void Dictionary::search(std::atomic<bool>& stopSearch,
-                        const std::wstring& needle_in,
-                        const size_t num_fuzzy_replacements,
-                        const wchar_t wildcard,
-                        std::vector<TreeNode::PathInfo>& matches) const {
+void Dictionary::search(
+    std::atomic<bool>& stopSearch,
+    const std::wstring& needle,
+    const size_t num_fuzzy_replacements,
+    const wchar_t wildcard,
+    std::vector<std::pair<std::wstring, const std::vector<TreeNode::PathInfo>*>>& matches) const {
 
-  // to save storage and computation time, we save everything lower case.
-  // The scoring function at the end will score exact matches better than case insensitive matches.
-  std::wstring needle = needle_in;
-  std::transform(needle.begin(), needle.end(), needle.begin(), ::tolower);
+  // to save storage and computation time, we save everything lower case (see constructor of Needle).
+  // The scoring function at the end will use the case sensitive needle from Needle::getEffectiveSearchString().
   Needle n{needle};
   if (num_fuzzy_replacements > 0) {
     n.setFuzzySearch(num_fuzzy_replacements);
@@ -166,6 +165,9 @@ int Dictionary::scoreMatch(const std::wstring& searchString, const std::wstring&
 
   int bestScore = 0;
 
+  // optimization aproach: Instead of calculating the complete crosscorrelation like score for every possible offset. We start in the center, since we expect the words to be very simmillar, so the best score should be, when the words line up
+  // we can stop looking in one direktion, if the maximal score possible is lower than the current bestScore. ScoreChars returns values between 0 and 3.
+
   // Loop over all valid translations where searchString and match fully overlap
   for (int offset = -(int)searchString.size() + 1; offset < (int)match.size(); ++offset) {
     int score = 0;
@@ -175,7 +177,10 @@ int Dictionary::scoreMatch(const std::wstring& searchString, const std::wstring&
         score += scoreChars(searchString[i], match[matchIdx]);
       }
     }
-    bestScore = std::max(bestScore, score);
+
+    if (bestScore < score) {
+      bestScore = score;
+    }
   }
   return bestScore;
 }

@@ -8,17 +8,23 @@
 # ./build_script.sh -t
 # compile for release and testing
 # ./build_script.sh -rt
+# compile for linux release compare
+# ./build_script.sh -c
 
 buildType="Debug"
 buildFlags=""
 build_folder="../build"
 
 # Parse command-line arguments
-while getopts "rt" flag
+while getopts "rtc" flag
 do
     case "${flag}" in
         r)
           build_folder="../build_release"
+          buildType="Release"
+          ;;
+        c)
+          build_folder="../build_compare_release"
           buildType="Release"
           ;;
         t)

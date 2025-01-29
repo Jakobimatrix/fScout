@@ -2,10 +2,11 @@
 name="fScout_GUI"
 
 build_folder="../build"
-while getopts r flag
+while getopts "rc" flag
 do
     case "${flag}" in
         r) build_folder="../build_release";;
+        c) build_folder="../build_compare_release";;
     esac
 done
 
