@@ -2,6 +2,15 @@
 
 # fScout Project Setup for Windows
 
+[![C/C++ CI](https://github.com/Jakobimatrix/fScout/actions/workflows/ubuntu_build_test.yml/badge.svg)](https://github.com/Jakobimatrix/fScout/actions/workflows/ubuntu_build_test.yml)
+
+ - OS: Ubuntu 24.04
+ - compiler: clang 19, gcc 13
+ - debug + release
+ - tests
+ 
+---
+
 ## 1. Prerequisites
 
 Before you begin, ensure you have the following installed on your system:
