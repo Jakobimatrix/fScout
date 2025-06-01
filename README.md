@@ -8,10 +8,10 @@
  - compiler: clang 19, gcc 13
  - debug + release
  - tests
- 
+
 ---
 
-## 1. Prerequisites
+### 1. Prerequisites
 
 Before you begin, ensure you have the following installed on your system:
 
@@ -28,7 +28,7 @@ Before you begin, ensure you have the following installed on your system:
    - Select **Qt 5.15.2** with **MinGW 8.1.0** for both 32-bit AND 64-bit.
    - Under **Developer and Designer Tools**, select **MinGW 13.1.0** 64-bit.
 
-## 3. Clone the Project
+### 3. Clone the Project
 
 Clone the project repository from GitHub:
 
@@ -36,7 +36,7 @@ Clone the project repository from GitHub:
 git clone git@github.com:Jakobimatrix/fScout.git
 ```
 
-## Update Subrepositories
+#### Update Subrepositories
 
 After cloning the project, navigate into the project folder and run the following command to initialize and update the submodules:
 
@@ -44,7 +44,7 @@ After cloning the project, navigate into the project folder and run the followin
 git submodule update --init --recursive
 ```
 
-# 4. Build the Project
+### 4. Build the Project
 
  - Navigate to the scripts folder within the project directory.
  - Run the build script. You have two options:  
@@ -59,8 +59,9 @@ git submodule update --init --recursive
 
 The scripts will handle the build process, including setting up the environment and compiling the code and copying the QT dlls.
 At the end there will be a portable version inside a new zip folder. (currently the resources folder inside the zip is missing... I am sorry :(
+You can add them manually. You can also create an installer (which will have all resources)
 
-# 5. Build the Installer
+### 5. Build the Installer
 
  - Install Inno: https://jrsoftware.org/isinfo.php
  - Start the Inno Wizzard. The script is located scripts/ino.iss
