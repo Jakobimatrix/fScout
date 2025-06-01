@@ -1,54 +1,36 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.16)
 
-# Set the project name
-project(fScout VERSION 1.0.0)
+# Define project if not already defined (useful for subproject inclusion)
+if (NOT DEFINED PROJECT_NAME)
+    project(fScout LANGUAGES CXX)
 
-# Include custom CMake modules
-include(cmake/StandardProjectSettings.cmake)
-include(cmake/PreventInSourceBuilds.cmake)
+    # This variable must exist!
+    set(ENVIRONMENT_SETTINGS "ProjectSettings")
 
-# Set C++ standard and compile-time options
-add_library(project_options INTERFACE)
-target_compile_features(project_options INTERFACE cxx_std_20)
-if(UNIX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -pthread")
-elseif(WIN32)
-  if(MSVC)
-    message(FATAL_ERROR "MSVC not supported")
-  else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -mthreads")
-  endif()
+    add_library("${ENVIRONMENT_SETTINGS}" INTERFACE)
+
+    # ===== Compiler Settings =====
+    include(initRepo/cmake/CompilerSetup.cmake)
+
+    # ===== Warnings and Tools =====
+    include(initRepo/cmake/CompilerWarnings.cmake)
+    set_project_warnings(${ENVIRONMENT_SETTINGS})
+
+    # ===== External Dependencies =====
+    include(initRepo/cmake/Includes.cmake)
+
+    # ===== Options =====
+    include(initRepo/cmake/Options.cmake)
+    enable_multithreading(${ENVIRONMENT_SETTINGS})
+    enable_shared_libraries(${ENVIRONMENT_SETTINGS})
+
+    # ===== Fuzzing =====
+    include(initRepo/cmake/ClangFuzzyTests.cmake)
+
+    # ===== CTest with Catch2 =====
+    setup_catch2_and_ctest()
+    enable_testing()
 endif()
-
-# Time trace options for Clang (Linux builds)
-if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
-  option(ENABLE_BUILD_WITH_TIME_TRACE "Enable -ftime-trace to generate time tracing .json files on clang" OFF)
-  if(ENABLE_BUILD_WITH_TIME_TRACE)
-    target_compile_options(project_options INTERFACE -ftime-trace)
-  endif()
-endif()
-
-# Standard compiler warnings and static analysis options
-add_library(project_warnings INTERFACE)
-include(cmake/CompilerWarnings.cmake)
-set_project_warnings(project_warnings)
-include(cmake/StaticAnalyzers.cmake)
-include(cmake/Sanitizers.cmake)
-enable_sanitizers(project_options)
-
-# Doxygen documentation support
-include(cmake/Doxygen.cmake)
-enable_doxygen()
-
-
-# Set build type (Debug or Release)
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
-
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # supress console on release mode for windows
 if (WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -61,17 +43,16 @@ if (WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Release")
   endif()
 endif()
 
-message("############### BUILD TYPE: ${CMAKE_BUILD_TYPE} ###############")
+
 
 # Auto-run Qt's meta-object compiler (moc), resource compiler (rcc), and user interface compiler (uic)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-# Try to find Qt6 first
 find_package(Qt5 COMPONENTS Widgets Core Gui REQUIRED)
 
-# Set required C++ standard (in this case, C++20)
+
 set(CMAKE_CXX_STANDARD 20)
 
 if(WIN32)
@@ -82,14 +63,9 @@ if(WIN32)
   endif()
 endif()
 
-# Add submodules for project organization
-add_subdirectory(src/utils)
-add_subdirectory(src/settings)
 add_subdirectory(src/timer)
+add_subdirectory(src/settings)
 add_subdirectory(src/globals)
 add_subdirectory(src/finder)
 add_subdirectory(src/display)
-
-# Add the main executable
-add_subdirectory(src/executable)
-
+add_subdirectory(src/executables)

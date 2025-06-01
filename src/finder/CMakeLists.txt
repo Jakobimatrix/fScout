@@ -13,10 +13,11 @@ add_library(finder_lib STATIC
   )
 
 target_link_libraries(finder_lib
-  settings_lib_1.0.0
-  utils_lib_0.0.1
+  settings_lib_2.0.0
+  utils_lib_1.0.0
+  timer_lib_1.0.0
   globals_lib
-  timer_lib
+  ${ENVIRONMENT_SETTINGS}
   )
 
 target_include_directories(finder_lib PUBLIC STATIC "${CMAKE_CURRENT_SOURCE_DIR}/src")

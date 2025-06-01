@@ -7,7 +7,7 @@
 #include <globals/macros.hpp>
 #include <globals/timer.hpp>
 #include <iostream>
-#include <sanitizers.hpp>
+#include <settings/sanitizers.hpp>
 #include <thread>
 #include <utils/filesystem/filesystem.hpp>
 
@@ -18,13 +18,13 @@
 Finder::Finder()
     : FinderSettings(Globals::getInstance().getPath2fScoutSettings()) {
   setDefaultSearchExceptions();
-  put<bool>(useWildcardPattern, USE_WILDCARD_PATTERN, true);
-  put<wchar_t>(wildcard, WILDCARD_PATTERN, true);
-  put<bool>(searchForFolderNames, SEACH_FOLDERS, true);
-  put<bool>(searchForFileNames, SEACH_FILES, true);
-  put<bool>(searchHiddenObjects, SEACH_HIDDEN_OBJECTS, true);
-  put<float>(fuzzyCoefficient, FUZZY_SEARCH_COEFF, true, util::saneMinMax, MIN_FUZZY_COEFF, MAX_FUZZY_COEFF);
-  put<std::unordered_set<std::wstring>>(exceptions, SEACH_EXEPTIONS, true);
+  put<bool>(&useWildcardPattern, USE_WILDCARD_PATTERN, true);
+  put<wchar_t>(&wildcard, WILDCARD_PATTERN, true);
+  put<bool>(&searchForFolderNames, SEACH_FOLDERS, true);
+  put<bool>(&searchForFileNames, SEACH_FILES, true);
+  put<bool>(&searchHiddenObjects, SEACH_HIDDEN_OBJECTS, true);
+  put<float>(&fuzzyCoefficient, FUZZY_SEARCH_COEFF, true, util::saneMinMax, MIN_FUZZY_COEFF, MAX_FUZZY_COEFF);
+  put<std::unordered_set<std::wstring>>(&exceptions, SEACH_EXEPTIONS, true);
 }
 Finder::~Finder() { save(); }
 
@@ -178,7 +178,7 @@ void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
 
   // Reset state for new indexing
   fullyIndexed = false;
-  dictionary = std::make_unique<Dictionary>();
+  dictionary   = std::make_unique<Dictionary>();
 
   workerThread = std::make_unique<std::thread>([this, callback]() {
 
@@ -240,8 +240,8 @@ void Finder::startIndexing(const Finder::CallbackFinnished& callback) {
     indexingTime = std::chrono::steady_clock::now();
     callback(true,
              std::to_wstring(numEntries) + L" entries found within " +
-                 std::to_wstring(t2.getPassedTime<std::chrono::milliseconds>().count()) +
-                 L"ms");
+               std::to_wstring(t2.getPassedTime<std::chrono::milliseconds>().count()) +
+               L"ms");
   });
 }
 
@@ -295,7 +295,7 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
     return;
   }
   constexpr size_t DYNAMIC_LOAD_THRESHOLD = 512;
-  constexpr size_t VECTOR_RESERVE_SIZE = 2048;
+  constexpr size_t VECTOR_RESERVE_SIZE    = 2048;
   stopCurrentWorker();
   workerThread = std::make_unique<std::thread>([this, callback, needle]() {
     std::vector<TreeNode::PathInfo> matches;
@@ -303,84 +303,85 @@ void Finder::search(const std::wstring needle /*intentional copy*/,
     matches.reserve(VECTOR_RESERVE_SIZE);
     bool finnished = false;
 
-    auto collector = std::make_unique<std::thread>([this, &callback, &needle, &matches, &finnished]() {
-      size_t num_send_matches = 0;
-      std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults;
+    auto collector =
+      std::make_unique<std::thread>([this, &callback, &needle, &matches, &finnished]() {
+        size_t num_send_matches = 0;
+        std::multimap<int, std::filesystem::path, std::greater<int>> scoredResults;
 
-      auto sendResults = [&scoredResults, &needle, &callback](const bool finished) {
-        std::vector<std::filesystem::path> results;
-        results.reserve(scoredResults.size());
-        const int maxScore = scoredResults.begin()->first;
-        const int threshold = maxScore - needle.size();
-        std::set<std::filesystem::path> seenPaths;
-        for (auto it = scoredResults.begin(); it != scoredResults.end(); ++it) {
-          const auto& [score, path] = *it;
-          if (score < threshold || !finished && results.size() > 20) {
-            break;
+        auto sendResults = [&scoredResults, &needle, &callback](const bool finished) {
+          std::vector<std::filesystem::path> results;
+          results.reserve(scoredResults.size());
+          const int maxScore  = scoredResults.begin()->first;
+          const int threshold = maxScore - needle.size();
+          std::set<std::filesystem::path> seenPaths;
+          for (auto it = scoredResults.begin(); it != scoredResults.end(); ++it) {
+            const auto& [score, path] = *it;
+            if (score < threshold || !finished && results.size() > 20) {
+              break;
+            }
+            // If the path has not been added yet, insert it into the result
+            if (seenPaths.insert(path).second) {
+              results.push_back(path);
+            }
           }
-          // If the path has not been added yet, insert it into the result
-          if (seenPaths.insert(path).second) {
-            results.push_back(path);
+          /*F_DEBUG("found %lu, unique %lu, send %lu",
+                  scoredResults.size(),
+                  seenPaths.size(),
+                  results.size());*/
+          callback(finished, results, needle);
+        };
+
+        auto holdDynamicLoading = [this, &matches, &finnished]() {
+          if (DYNAMIC_LOAD_THRESHOLD > matches.size()) {
+            return;  // dont peak into the vector which is shared between 2 treads, since it can be relocated now.
           }
-        }
-        /*F_DEBUG("found %lu, unique %lu, send %lu",
-                scoredResults.size(),
-                seenPaths.size(),
-                results.size());*/
-        callback(finished, results, needle);
-      };
+          while (!finnished && !stopWorking.load()) {
+            using namespace std::chrono_literals;
+            std::this_thread::sleep_for(100ms);
+          }
+        };
 
-      auto holdDynamicLoading = [this, &matches, &finnished]() {
-        if (DYNAMIC_LOAD_THRESHOLD > matches.size()) {
-          return;  // dont peak into the vector which is shared between 2 treads, since it can be relocated now.
-        }
-        while (!finnished && !stopWorking.load()) {
-          using namespace std::chrono_literals;
-          std::this_thread::sleep_for(100ms);
-        }
-      };
-
-      bool searchFinnishedAndAllSend = false;
-      size_t new_size = 0;
-      size_t old_size = 0;
-      while (!searchFinnishedAndAllSend) {
-        if (stopWorking.load()) {
-          break;
-        }
-        new_size = matches.size();
-
-        for (; num_send_matches < new_size; ++num_send_matches) {
+        bool searchFinnishedAndAllSend = false;
+        size_t new_size                = 0;
+        size_t old_size                = 0;
+        while (!searchFinnishedAndAllSend) {
           if (stopWorking.load()) {
             break;
           }
-          holdDynamicLoading();
-          // copy! in case std vector relocates on resize
-          // this could crash if the vector gets relocated while copying.
-          // hopefully holdDynamicLoading will prevent this!
-          // we could also implement a thread save vector...
-          TreeNode::PathInfo match = matches[num_send_matches];
-          const auto name = util::getLastPathComponent(match.path);
-          bool notHidden = searchHiddenObjects || name[0] != L'.';
+          new_size = matches.size();
 
-          if (notHidden && (match.isDirectory && searchForFolderNames ||
-                            !match.isDirectory && searchForFileNames)) {
-            scoredResults.emplace(Dictionary::scoreMatch(needle, name), match.path);
+          for (; num_send_matches < new_size; ++num_send_matches) {
+            if (stopWorking.load()) {
+              break;
+            }
+            holdDynamicLoading();
+            // copy! in case std vector relocates on resize
+            // this could crash if the vector gets relocated while copying.
+            // hopefully holdDynamicLoading will prevent this!
+            // we could also implement a thread save vector...
+            TreeNode::PathInfo match = matches[num_send_matches];
+            const auto name          = util::getLastPathComponent(match.path);
+            bool notHidden           = searchHiddenObjects || name[0] != L'.';
+
+            if (notHidden && (match.isDirectory && searchForFolderNames ||
+                              !match.isDirectory && searchForFileNames)) {
+              scoredResults.emplace(Dictionary::scoreMatch(needle, name), match.path);
+            }
+          }
+          searchFinnishedAndAllSend = finnished && new_size == matches.size();
+          if (new_size > old_size || searchFinnishedAndAllSend) {
+            old_size = new_size;
+            sendResults(searchFinnishedAndAllSend);
           }
         }
-        searchFinnishedAndAllSend = finnished && new_size == matches.size();
-        if (new_size > old_size || searchFinnishedAndAllSend) {
-          old_size = new_size;
-          sendResults(searchFinnishedAndAllSend);
-        }
-      }
-    });
+      });
 
     wchar_t wildcardChar{useWildcardPattern ? wildcard : Dictionary::NO_WILDCARD};
 
     constexpr size_t MAX_FUZZY_REPLACEMENTS = 2;
     const size_t numFuzzyReplacements =
-        std::min(MAX_FUZZY_REPLACEMENTS,
-                 static_cast<size_t>(std::round(fuzzyCoefficient * needle.size())));
+      std::min(MAX_FUZZY_REPLACEMENTS,
+               static_cast<size_t>(std::round(fuzzyCoefficient * needle.size())));
 
     Timer searchTimer;
     searchTimer.start();
@@ -402,7 +403,7 @@ std::wstring Finder::getIndexingDate() const {
   }
 
   auto timeT = std::chrono::system_clock::to_time_t(
-      std::chrono::system_clock::now() + (indexingTime - std::chrono::steady_clock::now()));
+    std::chrono::system_clock::now() + (indexingTime - std::chrono::steady_clock::now()));
 
   std::tm* timeStruct = std::localtime(&timeT);
 

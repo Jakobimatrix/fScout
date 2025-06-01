@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#include <filesystem>  // if using compiler < c++17 use <experimental/filesystem ans std::experimental::filesystem
+#include <filesystem>
 #include <stdexcept>
 #include <timer/collecting_timer.hpp>
 #include <timer/frame_timer.hpp>
@@ -19,15 +19,15 @@ class Globals {
   ~Globals() {
     constexpr char seperator = ';';
     const std::string filename_timers =
-        std::to_string(timeSinceEpochMillisec()) + "_timers.csv";
+      std::to_string(timeSinceEpochMillisec()) + "_timers.csv";
     const std::string path_timers =
-        (absolute_path_to_settings / filename_timers).string();
+      (absolute_path_to_settings / filename_timers).string();
     collecting_timer.measurementsToFile<std::chrono::microseconds>(path_timers, seperator);
 
     const std::string filename_frame_timers =
-        std::to_string(timeSinceEpochMillisec()) + "_frame_timers.csv";
+      std::to_string(timeSinceEpochMillisec()) + "_frame_timers.csv";
     const std::string path_frame_timers =
-        (absolute_path_to_settings / filename_frame_timers).string();
+      (absolute_path_to_settings / filename_frame_timers).string();
 
     frame_timer.measurementsToFile<std::chrono::microseconds>(path_frame_timers, seperator);
   }
@@ -59,8 +59,8 @@ class Globals {
     namespace fs = std::filesystem;
 
     const fs::path current_path = fs::current_path();
-    auto path_it = current_path.begin();
-    fs::path abs_path_to_base = fs::path("");
+    auto path_it                = current_path.begin();
+    fs::path abs_path_to_base   = fs::path("");
     for (; path_it != current_path.end(); path_it++) {
       abs_path_to_base.append(path_it->c_str());
       if (*path_it == REPRO_FOLDER_NAME) {
@@ -68,11 +68,11 @@ class Globals {
       }
     }
 
-    absolute_path_to_base = abs_path_to_base;
+    absolute_path_to_base       = abs_path_to_base;
     absolute_path_to_executable = current_path;
-    absolute_path_to_resources = absolute_path_to_base / RESOURCES_FOLDER_NAME;
+    absolute_path_to_resources  = absolute_path_to_base / RESOURCES_FOLDER_NAME;
     absolute_path_to_save_files = absolute_path_to_base / SAVE_FOLDER_NAME;
-    absolute_path_to_settings = absolute_path_to_base / SETTINGS_FOLDER_NAME;
+    absolute_path_to_settings   = absolute_path_to_base / SETTINGS_FOLDER_NAME;
 
     if (!fs::exists(absolute_path_to_resources)) {
       std::runtime_error("The expected Path " +
@@ -133,21 +133,21 @@ class Globals {
   std::filesystem::path absolute_path_to_settings;
 
   // Folder names
-  const std::filesystem::path REPRO_FOLDER_NAME = "fScout";
+  const std::filesystem::path REPRO_FOLDER_NAME     = "fScout";
   const std::filesystem::path RESOURCES_FOLDER_NAME = "resources";
-  const std::filesystem::path SAVE_FOLDER_NAME = "saved_data";
-  const std::filesystem::path SETTINGS_FOLDER_NAME = "settings";
+  const std::filesystem::path SAVE_FOLDER_NAME      = "saved_data";
+  const std::filesystem::path SETTINGS_FOLDER_NAME  = "settings";
 
   // File names
   const std::filesystem::path FILE_NAME_DISPLAY_SETTINGS =
-      "display_settings.txt";
+    "display_settings.txt";
   const std::filesystem::path FILE_NAME_FSCOUT_SETTINGS = "fScout_settings.txt";
 
   // Strings
-  const std::string MAIN_WINDOW_NAME = std::string("fScout");
-  const std::string VERSION_NAME = std::string("Abyssinian");
+  const std::string MAIN_WINDOW_NAME          = std::string("fScout");
+  const std::string VERSION_NAME              = std::string("Abyssinian");
   const std::wstring BINARY_FORMAT_IDENTIFIER = std::wstring(L"8008135-fScout");
-  const std::wstring BINARY_FILE_INDEX = std::wstring(L"fScout.index");
+  const std::wstring BINARY_FILE_INDEX        = std::wstring(L"fScout.index");
 
   // timer
   mutable CollectingTimer collecting_timer;

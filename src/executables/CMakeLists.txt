@@ -10,6 +10,7 @@ list(APPEND fScout_GUI_SOURCES
   PRIVATE globals_lib
   PRIVATE display_lib
   Qt5::Widgets
+  ${ENVIRONMENT_SETTINGS}
 )
 
 # for utlis/system/memory.h

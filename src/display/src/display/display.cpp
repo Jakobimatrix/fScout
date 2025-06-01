@@ -6,10 +6,10 @@
 
 Display::Display()
     : DisplaySettings(Globals::getInstance().getPath2DisplaySettings()) {
-  put<int, 4>(disp_pos_size[0], DISP_POS_SIZE, true);
-  put<std::string>(split_widget_state, SPLIT_WIDGET_STATE, true);
-  put<int>(disp_scale, DISP_SCALE, true);
-  put<int>(doubleClickInterval_ms, DOUBLE_CLICK_INTERVAL, true);
+  put<int, 4>(disp_pos_size.data(), DISP_POS_SIZE, true);
+  put<std::string>(&split_widget_state, SPLIT_WIDGET_STATE, true);
+  put<int>(&disp_scale, DISP_SCALE, true);
+  put<int>(&doubleClickInterval_ms, DOUBLE_CLICK_INTERVAL, true);
 }
 
 Display::~Display() {
@@ -35,8 +35,8 @@ void Display::save() {
   if (!finder.saveCurrentIndex(finder.getRootFolder() /
                                Globals::getInstance().getBinaryFileIndex())) {
     std::wstring msg(
-        L"Failed to save index to " +
-        (finder.getRootFolder() / Globals::getInstance().getBinaryFileIndex()).wstring());
+      L"Failed to save index to " +
+      (finder.getRootFolder() / Globals::getInstance().getBinaryFileIndex()).wstring());
     popup_error(msg, L"Error Saveing");
   }
 }
@@ -66,8 +66,8 @@ void Display::open() {
   setStatus(L"Searching through root Folder: " + choosenPath.wstring());
   resetDisplayElements();
   finder.setRootPath(
-      choosenPath,
-      std::bind(&Display::callbackIndexing, this, std::placeholders::_1, std::placeholders::_2));
+    choosenPath,
+    std::bind(&Display::callbackIndexing, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 

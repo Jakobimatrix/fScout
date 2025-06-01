@@ -18,6 +18,14 @@ constexpr GPU GPU_InterlHD4000{24, 8, 3, 0};
 
 int main(int argc, char* argv[]) {
 
+  int i = 0;
+  double d = 3.;
+  d = i;
+
+  if (d > 0) {
+    return 0;
+  }
+
   // make sure to always use the same decimal point separator
   const auto locale = std::locale("C");
   printf("Set Settings output to locale setting: %s\n", locale.name().c_str());

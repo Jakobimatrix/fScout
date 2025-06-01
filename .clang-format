@@ -1,0 +1,33 @@
+DerivePointerAlignment: false
+BasedOnStyle: Google
+
+PenaltyExcessCharacter: 1
+BinPackArguments: false
+BinPackParameters: false
+AllowShortIfStatementsOnASingleLine: false
+MaxEmptyLinesToKeep: 3
+KeepEmptyLinesAtTheStartOfBlocks: true
+SortIncludes: false
+
+RequiresClausePosition: OwnLine
+
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCompound: true
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCompound: true
+
+ContinuationIndentWidth: 2
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+NamespaceIndentation: None
+PackConstructorInitializers: Never
+PointerAlignment: Left
+ReferenceAlignment: Left
+

@@ -6,7 +6,7 @@
 #include <array>
 #include <filesystem>
 #include <functional>
-#include <settings.hpp>
+#include <settings/settings.hpp>
 #include <string>
 
 // This parent class handels all the savings/loadings and other non visual related tasks
@@ -190,12 +190,12 @@ class Display : public DisplaySettings {
 
 
   // SETTINGS
-  std::array<int, 4> disp_pos_size = {{50, 50, 600, 400}};
-  const std::string DISP_POS_SIZE = "DisplayXYWH";
-  std::string split_widget_state = "";
-  const std::string SPLIT_WIDGET_STATE = "SplitWidgetState";
-  int disp_scale = 100;
-  const std::string DISP_SCALE = "DisplayScale";
-  int doubleClickInterval_ms = 250;
+  std::array<int, 4> disp_pos_size        = {{50, 50, 600, 400}};
+  const std::string DISP_POS_SIZE         = "DisplayXYWH";
+  std::string split_widget_state          = "";
+  const std::string SPLIT_WIDGET_STATE    = "SplitWidgetState";
+  int disp_scale                          = 100;
+  const std::string DISP_SCALE            = "DisplayScale";
+  int doubleClickInterval_ms              = 250;
   const std::string DOUBLE_CLICK_INTERVAL = "DoubleClickInterval";
 };

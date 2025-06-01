@@ -1,9 +1,12 @@
 [submodule "src/settings"]
 	path = src/settings
-	url = git@github.com:Jakobimatrix/settings.git
-[submodule "src/utils"]
-	path = src/utils
-	url = git@github.com:Jakobimatrix/utils.git
+	url = https://github.com/Jakobimatrix/settings.git
+	branch = main
 [submodule "src/timer"]
 	path = src/timer
-	url = git@github.com:Jakobimatrix/timer.git
+	url = https://github.com/Jakobimatrix/timer.git
+	branch = master
+[submodule "initRepo"]
+	path = initRepo
+	url = https://github.com/Jakobimatrix/initRepo.git
+	branch = main

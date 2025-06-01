@@ -8,11 +8,12 @@ add_library(display_lib STATIC
 
 target_link_libraries(display_lib
   Qt5::Widgets
-  settings_lib_1.0.0
+  settings_lib_2.0.0
   globals_lib
   finder_lib
-  timer_lib
-  utils_lib
+  timer_lib_1.0.0
+  utils_lib_1.0.0
+  ${ENVIRONMENT_SETTINGS}
   )
 
 target_include_directories(display_lib PUBLIC STATIC "${CMAKE_CURRENT_SOURCE_DIR}/src")

@@ -9,22 +9,22 @@
 #include <functional>
 #include <memory>
 #include <set>
-#include <settings.hpp>
+#include <settings/settings.hpp>
 #include <string>
 #include <thread>
 
 using FinderSettings =
-    util::Settings<std::variant<bool *, float *, size_t *, wchar_t *, std::unordered_set<std::wstring> *>>;
+  util::Settings<std::variant<bool*, float*, size_t*, wchar_t*, std::unordered_set<std::wstring>*>>;
 class Finder : public FinderSettings {
   std::filesystem::path root = std::filesystem::path();
-  bool fullyIndexed = false;
+  bool fullyIndexed          = false;
   std::unique_ptr<Dictionary> dictionary;
   std::unique_ptr<std::thread> workerThread;
   std::atomic<bool> stopWorking = false;
 
-  using CallbackFinnished = std::function<void(const bool, const std::wstring &msg)>;
+  using CallbackFinnished = std::function<void(const bool, const std::wstring& msg)>;
   using CallbackSearchResult =
-      std::function<void(const bool, const std::vector<std::filesystem::path> &, const std::wstring &)>;
+    std::function<void(const bool, const std::vector<std::filesystem::path>&, const std::wstring&)>;
   size_t numEntries = 0;
 
  public:
@@ -36,10 +36,10 @@ class Finder : public FinderSettings {
   size_t getNumEntries() const;
   std::filesystem::path getRootFolder() const;
 
-  void setRootPath(const std::filesystem::path &, const CallbackFinnished &);
+  void setRootPath(const std::filesystem::path&, const CallbackFinnished&);
 
-  bool saveCurrentIndex(const std::filesystem::path &);
-  bool loadIndexFromFile(const std::filesystem::path &);
+  bool saveCurrentIndex(const std::filesystem::path&);
+  bool loadIndexFromFile(const std::filesystem::path&);
 
   bool usesWildcardPattern() const;
   wchar_t getWindcard() const;
@@ -56,7 +56,7 @@ class Finder : public FinderSettings {
   float getFuzzyCoefficient() const;
 
 
-  void search(const std::wstring needle, const CallbackSearchResult &);
+  void search(const std::wstring needle, const CallbackSearchResult&);
 
   std::wstring getIndexingDate() const;
 
@@ -69,21 +69,21 @@ class Finder : public FinderSettings {
 
  private:
   void setDefaultSearchExceptions();
-  bool shouldIndexEntry(const std::filesystem::directory_entry &entry) const;
-  void startIndexing(const CallbackFinnished &);
+  bool shouldIndexEntry(const std::filesystem::directory_entry& entry) const;
+  void startIndexing(const CallbackFinnished&);
 
   // SETTINGS
-  float fuzzyCoefficient = 0.25f;
-  const std::string FUZZY_SEARCH_COEFF = "fuzzySearch";
-  bool useWildcardPattern = false;
+  float fuzzyCoefficient                 = 0.25f;
+  const std::string FUZZY_SEARCH_COEFF   = "fuzzySearch";
+  bool useWildcardPattern                = false;
   const std::string USE_WILDCARD_PATTERN = "UseWildcardPattern";
-  wchar_t wildcard = L'*';
-  const std::string WILDCARD_PATTERN = "Wildcard";
-  bool searchForFolderNames = true;
-  const std::string SEACH_FOLDERS = "SearchFolders";
-  bool searchForFileNames = true;
-  const std::string SEACH_FILES = "SearchFiles";
-  bool searchHiddenObjects = false;
+  wchar_t wildcard                       = L'*';
+  const std::string WILDCARD_PATTERN     = "Wildcard";
+  bool searchForFolderNames              = true;
+  const std::string SEACH_FOLDERS        = "SearchFolders";
+  bool searchForFileNames                = true;
+  const std::string SEACH_FILES          = "SearchFiles";
+  bool searchHiddenObjects               = false;
   const std::string SEACH_HIDDEN_OBJECTS = "SearchHiddenObjects";
   std::unordered_set<std::wstring> exceptions;
   const std::string SEACH_EXEPTIONS = "SearchExceptions";

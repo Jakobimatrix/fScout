@@ -1,6 +1,6 @@
 #include "displayQt.h"
 
-#include <utils/system/memory.h>
+#include <utils/system/memory.hpp>
 
 #include <QFileDialog>
 #include <QMessageBox>
@@ -8,8 +8,9 @@
 #include <globals/globals.hpp>
 #include <globals/macros.hpp>
 
-DisplayQt::DisplayQt() : Display() {
-  finder_widget = new FinderWidget(this);
+DisplayQt::DisplayQt()
+    : Display() {
+  finder_widget        = new FinderWidget(this);
   finder_output_widget = new FinderOutputWidget(this);
 
   splitter = new QSplitter(this);
@@ -22,11 +23,11 @@ DisplayQt::DisplayQt() : Display() {
   setCentralWidget(splitter);
 
   // Create a main layout to stack the top widget and the splitter
-  QVBoxLayout *mainLayout = new QVBoxLayout();
+  QVBoxLayout* mainLayout = new QVBoxLayout();
   mainLayout->addWidget(splitter);
 
   // Set main layout to a central widget
-  QWidget *centralWidget = new QWidget(this);
+  QWidget* centralWidget = new QWidget(this);
   centralWidget->setLayout(mainLayout);
   setCentralWidget(centralWidget);
 
@@ -45,7 +46,7 @@ DisplayQt::DisplayQt() : Display() {
   // Only scale the font. The window size was already set.
   changeScale(getDisplayScale(), true);
 
-  const auto &path = Globals::getInstance().getAbsPath2Resources();
+  const auto& path = Globals::getInstance().getAbsPath2Resources();
   QPixmap pixmap((path / "open.png").string().c_str());
   QIcon icon(pixmap.scaled(BASE_ICON_SIZE, BASE_ICON_SIZE, Qt::KeepAspectRatio));
   setWindowIcon(icon);
@@ -58,13 +59,13 @@ void DisplayQt::resetDisplayElements() {
   finder_output_widget->reset();
 }
 
-void DisplayQt::updateInfo(const std::wstring &root_path,
+void DisplayQt::updateInfo(const std::wstring& root_path,
                            const size_t num_files,
-                           const std::wstring &indexingDate) {
+                           const std::wstring& indexingDate) {
   finder_widget->updateInfo(root_path, num_files, indexingDate);
 }
 
-void DisplayQt::onScaleChanged(const QString &scaleText) {
+void DisplayQt::onScaleChanged(const QString& scaleText) {
   bool ok;
   int scale = scaleText.leftRef(scaleText.length() - 1).toInt(&ok);  // Remove '%' and convert to int
 
@@ -103,7 +104,7 @@ const QStringList DisplayQt::getAvailableZoomLevels() {
 
 const int DisplayQt::getCurrentZoomLevelIndex(int currentZoom) {
   QStringList zoomLevels = getAvailableZoomLevels();
-  QString zoomText = QString::number(currentZoom) + "%";
+  QString zoomText       = QString::number(currentZoom) + "%";
 
   int index = zoomLevels.indexOf(zoomText);
   return (index != -1) ? index : 0;  // If zoom level not found, default to 100% (index 0)
@@ -112,7 +113,7 @@ const int DisplayQt::getCurrentZoomLevelIndex(int currentZoom) {
 void DisplayQt::close() { QMainWindow::close(); }
 void DisplayQt::save() { Display::save(); }
 
-void DisplayQt::closeEvent(QCloseEvent *event) {
+void DisplayQt::closeEvent(QCloseEvent* event) {
   if (!exitGracefully()) {
     event->ignore();
   }
@@ -122,17 +123,17 @@ void DisplayQt::closeEvent(QCloseEvent *event) {
 }
 
 
-void DisplayQt::resizeEvent(QResizeEvent *event) {
+void DisplayQt::resizeEvent(QResizeEvent* event) {
   saveDisplaySize(event->size().width(), event->size().height());
   QMainWindow::resizeEvent(event);
 }
 
-void DisplayQt::moveEvent(QMoveEvent *event) {
+void DisplayQt::moveEvent(QMoveEvent* event) {
   saveDisplayPosition(event->pos().x(), event->pos().y());
   QMainWindow::moveEvent(event);
 }
 
-bool DisplayQt::askYesNoQuestion(const std::wstring &question, const std::wstring &title) {
+bool DisplayQt::askYesNoQuestion(const std::wstring& question, const std::wstring& title) {
   QMessageBox::StandardButton ret;
   ret = QMessageBox::question(this,
                               QString::fromStdWString(title),
@@ -141,22 +142,22 @@ bool DisplayQt::askYesNoQuestion(const std::wstring &question, const std::wstrin
   return ret == QMessageBox::Yes;
 }
 
-void DisplayQt::popup_info(const std::wstring &text, const std::wstring &title) {
+void DisplayQt::popup_info(const std::wstring& text, const std::wstring& title) {
   QMessageBox::information(
-      this, QString::fromStdWString(text), QString::fromStdWString(title), QMessageBox::Ok);
+    this, QString::fromStdWString(text), QString::fromStdWString(title), QMessageBox::Ok);
 }
 
-void DisplayQt::popup_warning(const std::wstring &text, const std::wstring &title) {
+void DisplayQt::popup_warning(const std::wstring& text, const std::wstring& title) {
   QMessageBox::warning(
-      this, QString::fromStdWString(text), QString::fromStdWString(title), QMessageBox::Ok);
+    this, QString::fromStdWString(text), QString::fromStdWString(title), QMessageBox::Ok);
 }
 
-void DisplayQt::popup_error(const std::wstring &text, const std::wstring &title) {
+void DisplayQt::popup_error(const std::wstring& text, const std::wstring& title) {
   QMessageBox::critical(
-      this, QString::fromStdWString(text), QString::fromStdWString(title), QMessageBox::Ok);
+    this, QString::fromStdWString(text), QString::fromStdWString(title), QMessageBox::Ok);
 }
 
-void DisplayQt::setWindowFilePath(const std::wstring &file_path) {
+void DisplayQt::setWindowFilePath(const std::wstring& file_path) {
   QMainWindow::setWindowFilePath(QString::fromStdWString(file_path));
 }
 
@@ -164,7 +165,7 @@ void DisplayQt::setWindowFilePath(const std::wstring &file_path) {
 std::filesystem::path DisplayQt::openDirChooserDialog() {
 
   QString dir = QFileDialog::getExistingDirectory(
-      nullptr, "Select Folder", "", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    nullptr, "Select Folder", "", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
   if (!dir.isEmpty()) {
     return std::filesystem::path(dir.toStdString());
@@ -180,7 +181,7 @@ void DisplayQt::loadSplitterState() {
   const std::string hex_string_state = getSplitWidgetState();
 
   constexpr size_t NUM_HEX_IN_BYTE = 2;
-  constexpr size_t NUM_BITS_HEX = 4;
+  constexpr size_t NUM_BITS_HEX    = 4;
 
   if (hex_string_state.size() == 0 || hex_string_state.size() % NUM_HEX_IN_BYTE != 0) {
     return;
@@ -191,15 +192,15 @@ void DisplayQt::loadSplitterState() {
   for (size_t i = 0; i < hex_string_state.size(); i += NUM_HEX_IN_BYTE) {
     char byte = 0;
     for (size_t k = 0; k < NUM_HEX_IN_BYTE; ++k) {
-      const char &c = hex_string_state[i + k];
+      const char& c = hex_string_state[i + k];
       if (47 < c && c < 58) {
         byte |= (c - 48) << (k * NUM_BITS_HEX);
       } else if (64 < c && c < 71) {
         byte |= (c - 55) << (k * NUM_BITS_HEX);
       } else {
         ERROR(
-            "Failed to restore QWidget Splitt Screen state. Non Hex value "
-            "found.");
+          "Failed to restore QWidget Splitt Screen state. Non Hex value "
+          "found.");
         return;
       }
     }
@@ -207,7 +208,7 @@ void DisplayQt::loadSplitterState() {
   }
 
   const QByteArray qbytes_state = QByteArray::fromRawData(
-      bytes_state.data(), static_cast<int>(bytes_state.size()));
+    bytes_state.data(), static_cast<int>(bytes_state.size()));
   if (!splitter->restoreState(qbytes_state)) {
     ERROR("Failed to restore QWidget Splitt Screen state.");
   }
@@ -221,7 +222,7 @@ void DisplayQt::saveSplitterState() {
   std::string bit_string_state("");
   constexpr size_t NUM_BITS_HEX = 4;
 
-  constexpr int FIRSTBITS_MASK = 0xF0;
+  constexpr int FIRSTBITS_MASK  = 0xF0;
   constexpr int SECONDBITS_MASK = 0x0F;
   for (auto c = qbytes_state.begin(); c != qbytes_state.end(); c++) {
 
@@ -229,18 +230,18 @@ void DisplayQt::saveSplitterState() {
     const int hex1 = *c & SECONDBITS_MASK;
 
     if (hex1 < 10) {
-      const char hexc = static_cast<char>(hex1) + 48;  // 0-9
+      const char hexc   = static_cast<char>(hex1) + 48;  // 0-9
       bit_string_state += hexc;
     } else {
-      const char hexc = static_cast<char>(hex1) + 55;  // A-F
+      const char hexc   = static_cast<char>(hex1) + 55;  // A-F
       bit_string_state += hexc;
     }
     if (hex2 < 10) {
-      const char hexc = static_cast<char>(hex2) + 48;  // 0-9
+      const char hexc   = static_cast<char>(hex2) + 48;  // 0-9
       bit_string_state += hexc;
 
     } else {
-      const char hexc = static_cast<char>(hex2) + 55;  // A-F
+      const char hexc   = static_cast<char>(hex2) + 55;  // A-F
       bit_string_state += hexc;
     }
   }
@@ -248,7 +249,7 @@ void DisplayQt::saveSplitterState() {
   saveSplitWidgetState(bit_string_state);
 }
 
-void DisplayQt::setStatus(const std::wstring &msg, int timeout) {
+void DisplayQt::setStatus(const std::wstring& msg, int timeout) {
   const bool enableSearch = isReadyToSearch();
   finder_output_widget->setDisabled(!enableSearch);
   finder_widget->setDisabled(!enableSearch);
@@ -258,13 +259,13 @@ void DisplayQt::setStatus(const std::wstring &msg, int timeout) {
 
 
   statusBar()->showMessage(
-      QString::fromStdWString(msg + L" - memory usage: " + std::to_wstring(mem) + L"MB"), timeout);
+    QString::fromStdWString(msg + L" - memory usage: " + std::to_wstring(mem) + L"MB"), timeout);
 }
 
 void DisplayQt::about() {
 
   const std::string info_text =
-      "<b>Current Version:</b> " + Globals::getInstance().getVersion();
+    "<b>Current Version:</b> " + Globals::getInstance().getVersion();
   QMessageBox::about(this, tr("About Finder"), tr(info_text.c_str()));
 }
 
@@ -273,17 +274,17 @@ void DisplayQt::open() { Display::open(); }
 void DisplayQt::visualize() { Display::visualize(); }
 
 void DisplayQt::createActions() {
-  const auto &path = Globals::getInstance().getAbsPath2Resources();
+  const auto& path = Globals::getInstance().getAbsPath2Resources();
 
   // Helper function to create an action
-  auto createAction = [this](const QString &iconPath,
-                             const QString &actionText,
-                             const QString &statusTip,
-                             const QKeySequence &shortcut,
-                             auto (DisplayQt::*slot)()) -> QAction * {
+  auto createAction = [this](const QString& iconPath,
+                             const QString& actionText,
+                             const QString& statusTip,
+                             const QKeySequence& shortcut,
+                             auto (DisplayQt::*slot)()) -> QAction* {
     QPixmap pixmap(iconPath);
     QIcon icon(pixmap.scaled(BASE_ICON_SIZE, BASE_ICON_SIZE, Qt::KeepAspectRatio));
-    QAction *action = new QAction(icon, actionText, this);
+    QAction* action = new QAction(icon, actionText, this);
     action->setStatusTip(statusTip);
     action->setShortcut(shortcut);
     connect(action, &QAction::triggered, this, slot);
@@ -292,7 +293,7 @@ void DisplayQt::createActions() {
 
   // Create actions
   const auto openPath = QString::fromStdWString((path / L"open.png").wstring());
-  openAct = createAction(openPath,
+  openAct             = createAction(openPath,
                          tr("&Open Folder..."),
                          tr("Open the base of your search."),
                          QKeySequence::Find,
@@ -300,7 +301,7 @@ void DisplayQt::createActions() {
 
 
   const auto visualizePath =
-      QString::fromStdWString((path / L"visualize.png").wstring());
+    QString::fromStdWString((path / L"visualize.png").wstring());
   visualizeAct = createAction(visualizePath,
                               tr("&Visualize Dictionary..."),
                               tr("Visualize the Indexing strategy."),
@@ -308,12 +309,12 @@ void DisplayQt::createActions() {
                               &DisplayQt::visualize);
 
   const auto exitPath = QString::fromStdWString((path / L"exit.png").wstring());
-  exitAct = createAction(
-      exitPath, tr("&Exit"), tr("Close the program."), QKeySequence::Close, &DisplayQt::close);
+  exitAct             = createAction(
+    exitPath, tr("&Exit"), tr("Close the program."), QKeySequence::Close, &DisplayQt::close);
 
   const auto savePath = QString::fromStdWString((path / L"save.png").wstring());
-  saveIndexAct = createAction(
-      savePath, tr("&Save"), tr("Save current Index."), QKeySequence::Save, &DisplayQt::save);
+  saveIndexAct        = createAction(
+    savePath, tr("&Save"), tr("Save current Index."), QKeySequence::Save, &DisplayQt::save);
 
   aboutAct = new QAction(tr("About &Finder"), this);
   aboutAct->setStatusTip(tr("Show the Finders's About box."));
@@ -351,7 +352,7 @@ void DisplayQt::createToolBars() {
   editToolBar->addAction(visualizeAct);
 #endif
   // scale chooser
-  QComboBox *scaleChooser = new QComboBox(this);
+  QComboBox* scaleChooser = new QComboBox(this);
   scaleChooser->addItems(getAvailableZoomLevels());
   scaleChooser->setCurrentIndex(getCurrentZoomLevelIndex(getDisplayScale()));
   connect(scaleChooser, &QComboBox::currentTextChanged, this, &DisplayQt::onScaleChanged);
@@ -362,12 +363,12 @@ void DisplayQt::createStatusBar() {
   statusBar()->showMessage(tr("Ready"));
   QColor backGroundColor = palette().color(QPalette::Window);
   const std::string backgroud_style_sheet =
-      "background-color: " + backGroundColor.name().toStdString() + ";";
+    "background-color: " + backGroundColor.name().toStdString() + ";";
   statusBar()->setStyleSheet(backgroud_style_sheet.c_str());
 }
 
 
-void DisplayQt::setSearchResults(const std::vector<std::filesystem::path> &searchResults,
-                                 const std::wstring &search) {
+void DisplayQt::setSearchResults(const std::vector<std::filesystem::path>& searchResults,
+                                 const std::wstring& search) {
   finder_output_widget->setSearchResults(searchResults, search);
 }
