@@ -27,6 +27,11 @@ jobs:
         sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 100
 
+    - name: Install Qt5 (Widgets, Core, Gui)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qtbase5-dev qtbase5-dev-tools qtchooser qt5-qmake qtbase5-private-dev libqt5widgets5 libqt5gui5 libqt5core5a
+
     - name: Install Clang 19
       run: |
         sudo apt-get update
