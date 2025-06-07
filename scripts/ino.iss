@@ -47,7 +47,7 @@ Name: "german"; MessagesFile: "compiler:Languages\German.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\build_windows_Release_64\src\executable\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build_windows_Release_64\src\executables\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build_windows_Release_64\src\*"; DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\resources\*"; DestDir: "{app}\resources"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
@@ -57,11 +57,11 @@ Name: "{app}\settings"; Flags: uninsneveruninstall
 Name: "{app}\saved_data"; Flags: uninsneveruninstall
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\bin\executable\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\bin\executable\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\bin\executables\{#MyAppExeName}"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\bin\executables\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\bin\executable\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\bin\executables\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
 // Prompt the user whether to delete the "settings and saved_data" folder

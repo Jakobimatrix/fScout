@@ -58,7 +58,7 @@ REM Set the path to windeployqt based on the build bit
 set windeployqt_path=C:\Qt\5.15.2\mingw81_%build_bit%\bin\windeployqt.exe
 
 REM Copy necessary DLLs using windeployqt
-%windeployqt_path% "%build_folder%\src\executable\fScout_GUI.exe"
+%windeployqt_path% "%build_folder%\src\executables\fScout_GUI.exe"
 
 REM Retrieve version from CMakeLists.txt
 for /f "tokens=2" %%i in ('findstr "project(fScout VERSION" "%source_folder%\CMakeLists.txt"') do set version=%%i
@@ -78,10 +78,10 @@ REM Check if 7z is available in the PATH
 where 7z >nul 2>nul
 if %errorlevel% equ 0 (
     REM Use 7z to zip everything inside the executable folder, force overwrite (-y)
-    7z a -y "..\%zip_folder_name%.zip" "%build_folder%\src\executable\*"
+    7z a -y "..\%zip_folder_name%.zip" "%build_folder%\src\executables\*"
 ) else (
     REM Fallback to PowerShell to create the zip file, force overwrite (-Force)
-    powershell -command "Compress-Archive -Path '%build_folder%\src\executable\*' -DestinationPath '..\%zip_folder_name%.zip' -Force"
+    powershell -command "Compress-Archive -Path '%build_folder%\src\executables\*' -DestinationPath '..\%zip_folder_name%.zip' -Force"
 )
 
 
